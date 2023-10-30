@@ -399,12 +399,13 @@ void readFilm(FilmNode *headFilm) {
   FilmNode *temp = headFilm;
   while (temp != NULL) {
     cout << "====================" << endl;
-    cout << "ID: " << temp->film.id << endl;
-    cout << "Judul: " << temp->film.title << endl;
-    cout << "Sutradara: " << temp->film.director << endl;
-    cout << "Genre: " << temp->film.genre << endl;
-    cout << "Tahun: " << temp->film.year << endl;
-    cout << "Sinopsis: " << temp->film.synopsis << endl;
+    cout << "|ID: " << temp->film.id << endl;
+    cout << "|Judul: " << temp->film.title << endl;
+    cout << "|Sutradara: " << temp->film.director << endl;
+    cout << "|Genre: " << temp->film.genre << endl;
+    cout << "|Tahun: " << temp->film.year << endl;
+    cout << "|Sinopsis: " << temp->film.synopsis << endl;
+    cout << "====================" << endl;
 
     float rating = calculateAvgRating(headFilm, headUser, temp->film.id);
     if (isnan(rating) || rating == 0) {
@@ -428,6 +429,87 @@ void readFilm(FilmNode *headFilm) {
 }
 
 // TODO: searching sama sorting
+// Searching Menggunakan Metode Boyer-Moore
+
+// mendefinisikan metode pencarian menggunakan metode boyer moore
+// metode ini mengambil dua argumen, teks dan pattern
+// fungsi ini akan mengembalikan pola yang ditemukan jika ditemukan
+int boyerMooreSearch(const string &text, const string &pattern) {
+
+  int m = pattern.length(); // variabel m digunakan untuk menyimpan panjang
+                            // karakter dari pettern
+  int n = text.length();    // variabel n digunakan untuk menyimpan panjang teks
+                            // yang akan dicari
+  int badChar[256];         // array badChar digunakan untuk menyimpan karakter
+                    // index/informasi karakter yaitu menggunakan 256 untuk
+                    // mendukung karakter ASCII
+  for (int i = 0; i < 256; i++) {
+    badChar[i] = -1; // karakter yang tidak ada didalam pola
+  }
+  for (int i = 0; i < m; i++) { // mengisi array badChar dengan lokasi
+                                // kemunculan karakter dalam pattern
+    badChar[tolower(pattern[i])] =
+        i; // untuk menconvert patternya ke lower case
+  }
+  int s = 0;             // mengatur posisi awal pencarian
+  while (s <= (n - m)) { // perulangan dimana s akan selalu melanjut hingga s <=
+                         // panjang teks-panjang pattern
+    int j = m - 1;       // variabel j digunakan untuk mengatur posisi untuk
+                         // mencocokkan pattern dengan karakter di teks
+    // Perulangan ini akan terus berulang selama ada karakter yang masih bisa di
+    // cocokkan
+    while (j >= 0 &&
+           tolower(pattern[j]) ==
+               tolower(text[s + j])) { // untuk merubah text ke lower case
+      j--; // untuk menggeser karakter unutuk dicocokkan dengan pattern
+    }
+    if (j < 0) {
+      return s; // Pattern cocok dengan teks yang ada dan Pattern Ditemukan,
+                // fungsi mengembalikan posisi awal pattern ditemukan
+    } else {
+      // menggeser posisi pencarian dengan memanfaatkan informasi Badchar
+      // untuk melompati sejumlah karakter yang tidak memiliki kecocokkan
+      // p=dnegan pattern sehingga "mempercepat pencarian"
+      s += max(1, j - badChar[tolower(
+                          text[s + j])]); // untuk merubah text ke lower case
+    }
+  }
+  return -1; // Fungsi mengembalikan -1 bila Pattern Tidak Ditemukan
+}
+
+// fungsi yang menggunakan metode boyer moore yang ada yang dapat mencari judul
+// film
+// menggunakan keyword dan fungsi ini akan mengembalikan daftar film sesuai
+// dengan kata kunci yang dimasukkan(pattern)
+FilmNode *searchFilmByTitle(FilmNode *headFilm, const string &keyword) {
+  FilmNode *resultHead = nullptr;
+  FilmNode *resultTail = nullptr;
+
+  // temp digunakan sebagai iterator dimana fungsi akan memerikasa apakah judul
+  // film cocok dengan keyword/patter yang di inputkan dengan menggunkana
+  // booyerMooreSearch
+  FilmNode *temp = headFilm;
+  while (temp != nullptr) {
+    if (boyerMooreSearch(temp->film.title, keyword) != -1) {
+      FilmNode *newFilmNode = new FilmNode;
+      newFilmNode->film = temp->film;
+      newFilmNode->next = nullptr;
+
+      if (resultHead == nullptr) {
+        resultHead = newFilmNode;
+        resultTail = resultHead;
+
+      } else {
+        resultTail->next = newFilmNode;
+        resultTail = newFilmNode;
+      }
+    }
+
+    temp = temp->next;
+  }
+
+  return resultHead;
+}
 
 // TODO: Stack
 
@@ -449,13 +531,15 @@ void rateFilm(User *user, FilmNode *headFilm, int filmId, int rating) {
 // TODO: bagusin lagi menunya
 void adminMenu() {
   while (true) {
-    cout << "Pilihan Menu" << endl;
-    cout << "[0] Keluar" << endl;
-    cout << "[1] Tambah Film" << endl;
-    cout << "[2] Tampilkan Film" << endl;
-    cout << "[3] Hapus Film" << endl;
-    cout << "[4] Cari Film" << endl;
-    cout << "[5] Urutkan Film" << endl;
+    cout << "=====================" << endl;
+    cout << "|   Pilihan Menu    |" << endl;
+    cout << "|[0] Keluar         |" << endl;
+    cout << "|[1] Tambah Film    |" << endl;
+    cout << "|[2] Tampilkan Film |" << endl;
+    cout << "|[3] Hapus Film     |" << endl;
+    cout << "|[4] Cari Film      |" << endl;
+    cout << "|[5] Urutkan Film   |" << endl;
+    cout << "=====================" << endl;
 
     int choice = inputMenu();
     if (choice == -1) {
@@ -498,6 +582,27 @@ void adminMenu() {
       printMessage("Berhasil menghapus film.");
     } else if (choice == 4) {
       // todo
+      string keyword;
+      cout << "Masukkan Judul Film Yang Ingin Di Cari : ";
+      getline(cin, keyword);
+
+      FilmNode *searchResult = searchFilmByTitle(headFilm, keyword);
+
+      if (searchResult == nullptr) {
+        printMessage("Film Tidak Ditemukan");
+
+      } else {
+        cout << "Hasil Pencarian" << endl;
+        readFilm(searchResult);
+        printMessage("");
+
+        while (searchResult != nullptr) {
+          FilmNode *temp = searchResult;
+          searchResult = searchResult->next;
+          delete temp;
+        }
+      }
+
     } else if (choice == 5) {
       // todo
     }
@@ -509,12 +614,13 @@ void userMenu() {
     clearScreen();
     cout << "===== Selamat Datang " << currentUser->username
          << " =====" << endl;
-    cout << "Pilihan Menu" << endl;
-    cout << "[0] Keluar" << endl;
-    cout << "[1] Lihat Film" << endl;
-    cout << "[2] Rate Film" << endl;
-    cout << "[3] Hapus Rate Film" << endl;
-    cout << "[4] Cari Film" << endl;
+    cout << "|    Pilihan Menu    |" << endl;
+    cout << "|[0] Keluar          |" << endl;
+    cout << "|[1] Lihat Film      |" << endl;
+    cout << "|[2] Rate Film       |" << endl;
+    cout << "|[3] Hapus Rate Film |" << endl;
+    cout << "|[4] Cari Film       |" << endl;
+    cout << "======================" << endl;
 
     int choice = inputMenu();
     if (choice == -1) {
@@ -567,6 +673,27 @@ void userMenu() {
       printMessage("Berhasil menghapus rating.");
     } else if (choice == 4) {
       // todo
+
+      string keyword;
+      cout << "Masukkan Judul Film Yang Ingin Di Cari : ";
+      getline(cin, keyword);
+
+      FilmNode *searchResult = searchFilmByTitle(headFilm, keyword);
+
+      if (searchResult == nullptr) {
+        printMessage("Film Tidak Ditemukan");
+
+      } else {
+        cout << "Hasil Pencarian" << endl;
+        readFilm(searchResult);
+        printMessage("");
+
+        while (searchResult != nullptr) {
+          FilmNode *temp = searchResult;
+          searchResult = searchResult->next;
+          delete temp;
+        }
+      }
     }
   }
 }
@@ -630,6 +757,7 @@ int main() {
     cout << "[0] Keluar" << endl;
     cout << "[1] Login" << endl;
     cout << "[2] Register" << endl;
+    cout << "==========================" << endl;
     int choice = inputMenu();
     if (choice == -1) {
       continue;
