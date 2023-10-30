@@ -1,5 +1,7 @@
+#include <cmath>
 #include <iostream>
 #include <limits>
+#include <unordered_map>
 
 using namespace std;
 
@@ -7,14 +9,16 @@ struct User {
   string username;
   string password;
   bool admin;
+  unordered_map<int, int> filmRatings;
 };
 
 struct Film {
+  int id; // unique identifier
   string title;
   string director;
   string genre;
   int year;
-  string sinopsis;
+  string synopsis;
 };
 
 struct FilmNode {
@@ -36,12 +40,14 @@ int filmCount = 0;
 UserNode *headUser = NULL;
 int userCount = 0;
 
+User *currentUser = NULL;
+
 // UTILITY //
 void clearScreen() { cout << "\033[2J\033[1;1H"; }
 
 void printMessage(string message) {
   cout << "\n";
-  cout << "Message: " << message << endl;
+  cout << message << endl;
   cout << "Tekan enter untuk melanjutkan...";
   cin.ignore();
   clearScreen();
@@ -60,11 +66,65 @@ int inputMenu() {
     printMessage("Input tidak valid");
     return -1;
   } else {
+    cin.ignore(numeric_limits<streamsize>::max(), '\n');
     return menu;
   }
 }
 
-void registerUser(UserNode **headUser, User user) {
+int inputPosition(int filmCount) {
+  int position;
+
+  cout << "Masukkan posisi film: ";
+  if (!(cin >> position)) {
+    cin.clear();
+    cin.ignore(numeric_limits<streamsize>::max(), '\n');
+    printMessage("Input tidak valid");
+    return -1;
+  } else if (position <= 0 || position > filmCount + 1) {
+    cin.ignore(numeric_limits<streamsize>::max(), '\n');
+    printMessage("Posisi tidak valid");
+    return -1;
+  } else {
+    cin.ignore(numeric_limits<streamsize>::max(), '\n');
+    return position;
+  }
+}
+
+int inputRating(Film film) {
+  int rating;
+
+  while (true) {
+    cout << "Film: " << film.title << endl;
+    cout << "Masukkan rating: ";
+    if (!(cin >> rating)) {
+      cin.clear();
+      cin.ignore(numeric_limits<streamsize>::max(), '\n');
+      printMessage("Input tidak valid");
+      continue;
+    }
+
+    if (rating < 0 || rating > 10) {
+      cin.ignore(numeric_limits<streamsize>::max(), '\n');
+      printMessage("Rating harus diantara 0 sampai 10");
+      continue;
+    }
+
+    cin.ignore(numeric_limits<streamsize>::max(), '\n');
+
+    return rating;
+  }
+}
+
+Film findByPosition(FilmNode *headFilm, int position) {
+  FilmNode *temp = headFilm;
+  for (int i = 0; i < position - 1; i++) {
+    temp = temp->next;
+  }
+
+  return temp->film;
+}
+
+User *registerUser(UserNode **headUser, User user) {
   UserNode *newNode = new UserNode;
   newNode->user = user;
   newNode->next = NULL;
@@ -79,6 +139,8 @@ void registerUser(UserNode **headUser, User user) {
     }
     temp->next = newNode;
   }
+
+  return &newNode->user;
 }
 
 void readUser(UserNode *headUser) {
@@ -104,12 +166,13 @@ User createUser(string username = "", string password = "",
   user.username = username;
   user.password = password;
   user.admin = admin;
+  user.filmRatings = {};
 
   return user;
 }
 
-Film createFilmNode(string title = "", string director = "", string genre = "",
-                    int year = 0) {
+Film createFilm(string title = "", string director = "", string genre = "",
+                int year = 0, string synopsis = "") {
   Film film;
 
   if (title == "") {
@@ -129,6 +192,12 @@ Film createFilmNode(string title = "", string director = "", string genre = "",
     cin >> year;
   }
 
+  if (synopsis == "") {
+    cout << "Masukkan sinopsis film: ";
+    getline(cin, synopsis);
+  }
+
+  film.id = filmCount + 1;
   film.title = title;
   film.director = director;
   film.genre = genre;
@@ -196,7 +265,16 @@ void addFilmSpecific(FilmNode **headFilm, Film film, int &count, int position) {
   count++;
 }
 
-// TODO: nanti handle pas pemanggilan, cek dulu countnya
+void deleteFilmRatings(UserNode **headUser, int filmId) {
+  UserNode *temp = *headUser;
+  while (temp != NULL) {
+    if (temp->user.filmRatings.find(filmId) != temp->user.filmRatings.end()) {
+      temp->user.filmRatings.erase(filmId);
+    }
+    temp = temp->next;
+  }
+}
+
 void deleteFilmAtFirst(FilmNode **headFilm, int &count) {
   if (*headFilm == NULL) {
     return;
@@ -204,11 +282,11 @@ void deleteFilmAtFirst(FilmNode **headFilm, int &count) {
 
   FilmNode *temp = *headFilm;
   *headFilm = temp->next;
+  deleteFilmRatings(&headUser, temp->film.id);
   delete temp;
   count--;
 }
 
-// TODO nanti handle pas pemanggilan, cek dulu countnya
 void deleteFilmAtLast(FilmNode **headFilm, int &count) {
   if (*headFilm == NULL) {
     return;
@@ -218,6 +296,7 @@ void deleteFilmAtLast(FilmNode **headFilm, int &count) {
   while (temp->next->next != NULL) {
     temp = temp->next;
   }
+  deleteFilmRatings(&headUser, temp->next->film.id);
   delete temp->next;
   temp->next = NULL;
   count--;
@@ -225,7 +304,29 @@ void deleteFilmAtLast(FilmNode **headFilm, int &count) {
 
 // TODO nanti handle pas pemanggilan, cek dulu countnya
 void deleteFilmSpecific(FilmNode **headFilm, int &count, int position) {
+  // ketika head kosong : data belum ada
   if (*headFilm == NULL) {
+    return;
+  }
+
+  // ketika posisi yang dihapus adalah posisi pertama: sama saja dengan
+  // deleteFirst
+  if (position == 1) {
+    deleteFilmAtFirst(headFilm, count);
+    return;
+  }
+
+  // ketika posisi yang dihapus adalah posisi terakhir: sama saja dengan
+  // deleteLast
+  if (position == count) {
+    deleteFilmAtLast(headFilm, count);
+    return;
+  }
+
+  // ketika posisi yang dihapus diluar batas
+  // misal ada 5 data, kalo mau hapus di posisi 6, berarti diluar batas
+  // langsung aja berhenti. dihandle pas pemanggilan
+  if (position > count) {
     return;
   }
 
@@ -234,6 +335,7 @@ void deleteFilmSpecific(FilmNode **headFilm, int &count, int position) {
     temp = temp->next;
   }
   FilmNode *nextNode = temp->next;
+  deleteFilmRatings(&headUser, nextNode->film.id);
   temp->next = temp->next->next;
   delete nextNode;
   count--;
@@ -245,6 +347,11 @@ void updateFilm(FilmNode **headFilm, Film film, int position) {
     return;
   }
 
+  // posisi kurang dari/sama dengan 0 atau lebih dari jumlah data
+  if (position <= 0 || position > filmCount) {
+    return;
+  }
+
   FilmNode *temp = *headFilm;
   for (int i = 0; i < position - 1; i++) {
     temp = temp->next;
@@ -252,10 +359,87 @@ void updateFilm(FilmNode **headFilm, Film film, int position) {
   temp->film = film;
 }
 
+float calculateAvgRating(FilmNode *headFilm, UserNode *headUser, int filmId) {
+  FilmNode *temp = headFilm;
+  int totalRating = 0;
+  int totalUser = 0;
+  while (temp != NULL) {
+    if (temp->film.id == filmId) {
+      UserNode *tempUser = headUser;
+      while (tempUser != NULL) {
+        if (tempUser->user.filmRatings.find(filmId) !=
+            tempUser->user.filmRatings.end()) {
+
+          // kalo ratingnya 0, berarti belum pernah di rate/udah di hapus
+          if (tempUser->user.filmRatings[filmId] == 0) {
+            tempUser = tempUser->next;
+            continue;
+          }
+
+          totalRating += tempUser->user.filmRatings[filmId];
+          totalUser++;
+        }
+        tempUser = tempUser->next;
+      }
+      break;
+    }
+    temp = temp->next;
+  }
+
+  return (float)totalRating / totalUser;
+}
+
+int getMyRating(User *user, int filmId) {
+  if (user->filmRatings.find(filmId) == user->filmRatings.end()) {
+    return 0;
+  }
+
+  return user->filmRatings[filmId];
+}
+
 void readFilm(FilmNode *headFilm) {
   FilmNode *temp = headFilm;
   while (temp != NULL) {
-    cout << temp->film.title << endl;
+    cout << "====================" << endl;
+    cout << "ID: " << temp->film.id << endl;
+    cout << "Judul: " << temp->film.title << endl;
+    cout << "Sutradara: " << temp->film.director << endl;
+    cout << "Genre: " << temp->film.genre << endl;
+    cout << "Tahun: " << temp->film.year << endl;
+    cout << "Sinopsis: " << temp->film.synopsis << endl;
+
+    float rating = calculateAvgRating(headFilm, headUser, temp->film.id);
+    if (isnan(rating) || rating == 0) {
+      cout << "Rating: -" << endl;
+    } else {
+      cout << "Rating: " << rating << endl;
+    }
+
+    // kalo bukan admin, tampilkan ratingnya sendiri
+    if (!currentUser->admin) {
+      int myRating = getMyRating(currentUser, temp->film.id);
+      if (myRating == 0) {
+        cout << "Rating saya: -" << endl;
+      } else {
+        cout << "Rating saya: " << myRating << endl;
+      }
+    }
+
+    temp = temp->next;
+  }
+}
+
+// TODO: searching sama sorting
+
+// TODO: Stack
+
+void rateFilm(User *user, FilmNode *headFilm, int filmId, int rating) {
+  FilmNode *temp = headFilm;
+  while (temp != NULL) {
+    if (temp->film.id == filmId) {
+      user->filmRatings[filmId] = rating;
+      return;
+    }
     temp = temp->next;
   }
 }
@@ -263,6 +447,8 @@ void readFilm(FilmNode *headFilm) {
 /*
   Menu Admin (CRUD). Pada menu ini admin dapat melakukan operasi CRUD
 */
+
+// TODO: bagusin lagi menunya
 void adminMenu() {
   while (true) {
     cout << "Pilihan Menu" << endl;
@@ -277,31 +463,191 @@ void adminMenu() {
     if (choice == -1) {
       continue;
     }
+
+    if (choice == 0) {
+      break;
+    }
+
+    if (choice == 1) {
+      readFilm(headFilm);
+
+      int position;
+      cout << "Masukkan posisi film: ";
+      cin >> position;
+      cin.ignore();
+      addFilmSpecific(&headFilm, createFilm(), filmCount, position);
+      printMessage("Berhasil menambahkan film.");
+    } else if (choice == 2) {
+      clearScreen();
+      readFilm(headFilm);
+      printMessage("");
+    } else if (choice == 3) {
+      readFilm(headFilm);
+
+      while (true) {
+        int position = inputPosition(filmCount);
+        if (position == -1) {
+          continue;
+        } else if (position > filmCount) {
+          printMessage("Posisi tidak valid");
+          continue;
+        }
+
+        deleteFilmSpecific(&headFilm, filmCount, position);
+        break;
+      }
+
+      printMessage("Berhasil menghapus film.");
+    } else if (choice == 4) {
+      // todo
+    } else if (choice == 5) {
+      // todo
+    }
+  }
+}
+
+void userMenu() {
+  while (true) {
+    clearScreen();
+    cout << "===== Selamat Datang " << currentUser->username
+         << " =====" << endl;
+    cout << "Pilihan Menu" << endl;
+    cout << "[0] Keluar" << endl;
+    cout << "[1] Lihat Film" << endl;
+    cout << "[2] Rate Film" << endl;
+    cout << "[3] Hapus Rate Film" << endl;
+    cout << "[4] Cari Film" << endl;
+
+    int choice = inputMenu();
+    if (choice == -1) {
+      continue;
+    }
+
+    if (choice == 0) {
+      break;
+    }
+
+    if (choice == 1) {
+      clearScreen();
+      readFilm(headFilm);
+      printMessage("");
+    } else if (choice == 2) {
+      clearScreen();
+      while (true) {
+        readFilm(headFilm);
+
+        int position = inputPosition(filmCount);
+        if (position == -1) {
+          continue;
+        } else if (position > filmCount) {
+          printMessage("Posisi tidak valid");
+          continue;
+        }
+
+        int rating = inputRating(findByPosition(headFilm, position));
+
+        rateFilm(currentUser, headFilm, position, rating);
+
+        break;
+      }
+      printMessage("Berhasil memberikan rating.");
+
+    } else if (choice == 3) {
+      while (true) {
+        readFilm(headFilm);
+        int position = inputPosition(filmCount);
+        if (position == -1) {
+          continue;
+        } else if (position > filmCount) {
+          printMessage("Posisi tidak valid");
+          continue;
+        }
+
+        rateFilm(currentUser, headFilm, position, 0);
+        break;
+      }
+      printMessage("Berhasil menghapus rating.");
+    } else if (choice == 4) {
+      // todo
+    }
+  }
+}
+
+User *login(UserNode *headUser, string username, string password) {
+  UserNode *temp = headUser;
+  while (temp != NULL) {
+    if (temp->user.username == username && temp->user.password == password) {
+      return &temp->user;
+    }
+    temp = temp->next;
+  }
+
+  return NULL;
+}
+
+void loginMenu() {
+  string username, password;
+  cout << "Masukkan username: ";
+  getline(cin, username);
+  cout << "Masukkan password: ";
+  getline(cin, password);
+
+  User *user = login(headUser, username, password);
+  if (user == NULL) {
+    printMessage("Username atau password salah!");
+    return;
+  }
+
+  currentUser = user;
+  if (user->admin) {
+    adminMenu();
+  } else {
+    userMenu();
   }
 }
 
 int main() {
-  // adminMenu();
-
   registerUser(&headUser, createUser("admin", "admin", true));
-  registerUser(&headUser, createUser("user", "user", false));
+  User *user = registerUser(&headUser, createUser("user", "user", false));
+  User *user2 = registerUser(&headUser, createUser("user2", "user2", false));
 
-  addFilmAtLast(&headFilm,
-                createFilmNode("Avengers", "Joss Whedon", "Action", 2012),
-                filmCount);
   addFilmAtLast(
       &headFilm,
-      createFilmNode("Avengers: Age of Ultron", "Joss Whedon", "Action", 2015),
+      createFilm("Film 1", "Director 1", "Genre 1", 2021, "Synopsis 1"),
       filmCount);
   addFilmAtLast(
       &headFilm,
-      createFilmNode("Avengers: Infinity War", "Anthony Russo", "Action", 2018),
+      createFilm("Film 2", "Director 2", "Genre 2", 2021, "Synopsis 2"),
       filmCount);
-  deleteFilmAtFirst(&headFilm, filmCount);
-  deleteFilmAtLast(&headFilm, filmCount);
+  addFilmAtLast(
+      &headFilm,
+      createFilm("Film 3", "Director 3", "Genre 3", 2021, "Synopsis 3"),
+      filmCount);
 
-  readFilm(headFilm);
-  cout << filmCount << endl;
+  while (true) {
+    // reset kembali menjadi NULL
+    currentUser = NULL;
+
+    cout << "===== Selamat Datang =====" << endl;
+    cout << "[0] Keluar" << endl;
+    cout << "[1] Login" << endl;
+    cout << "[2] Register" << endl;
+    int choice = inputMenu();
+    if (choice == -1) {
+      continue;
+    }
+
+    switch (choice) {
+    case 0:
+      exit(0);
+    case 1:
+      loginMenu();
+      break;
+    case 2:
+      registerUser(&headUser, createUser());
+      break;
+    }
+  }
 
   return 0;
 }
