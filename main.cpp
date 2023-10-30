@@ -302,7 +302,6 @@ void deleteFilmAtLast(FilmNode **headFilm, int &count) {
   count--;
 }
 
-// TODO nanti handle pas pemanggilan, cek dulu countnya
 void deleteFilmSpecific(FilmNode **headFilm, int &count, int position) {
   // ketika head kosong : data belum ada
   if (*headFilm == NULL) {
@@ -341,7 +340,6 @@ void deleteFilmSpecific(FilmNode **headFilm, int &count, int position) {
   count--;
 }
 
-// TODO nanti handle pas pemanggilan, cek dulu countnya
 void updateFilm(FilmNode **headFilm, Film film, int position) {
   if (*headFilm == NULL) {
     return;
