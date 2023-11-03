@@ -807,7 +807,7 @@ void adminMenu() {
       readFilm(headFilm);
       printMessage("");
     } else if (choice == 3) {
-      if (!checkIfEmpty(headFilm)) {
+      if (checkIfEmpty(headFilm)) {
         continue;
       }
 
@@ -830,7 +830,7 @@ void adminMenu() {
       saveUserRatingFile(headUser);
       printMessage("Berhasil menghapus film.");
     } else if (choice == 4) {
-      if (!checkIfEmpty(headFilm)) {
+      if (checkIfEmpty(headFilm)) {
         continue;
       }
 
@@ -891,7 +891,7 @@ void userMenu() {
       printMessage("");
     } else if (choice == 2) {
       clearScreen();
-      if (!checkIfEmpty(headFilm)) {
+      if (checkIfEmpty(headFilm)) {
         continue;
       }
 
@@ -919,7 +919,7 @@ void userMenu() {
       printMessage("Berhasil memberikan rating.");
 
     } else if (choice == 3) {
-      if (!checkIfEmpty(headFilm)) {
+      if (checkIfEmpty(headFilm)) {
         continue;
       }
 
@@ -933,6 +933,11 @@ void userMenu() {
           continue;
         }
 
+        if (getMyRating(currentUser, position) == 0) {
+          printMessage("Anda belum memberikan rating pada film ini.");
+          continue;
+        }
+
         rateFilm(currentUser, headFilm, position, 0);
         break;
       }
@@ -941,7 +946,7 @@ void userMenu() {
       printMessage("Berhasil menghapus rating.");
     } else if (choice == 4) {
 
-      if (!checkIfEmpty(headFilm)) {
+      if (checkIfEmpty(headFilm)) {
         continue;
       }
 
