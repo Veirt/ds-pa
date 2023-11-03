@@ -201,31 +201,104 @@ User createUser(string username = "", string password = "", bool admin = false,
   return user;
 }
 
+bool validateFilmTitle(FilmNode *headFilm, string title) {
+  FilmNode *temp = headFilm;
+  while (temp != NULL) {
+    if (temp->film.title == title) {
+      return false;
+    }
+    temp = temp->next;
+  }
+
+  return true;
+}
+
 Film createFilm(string title = "", string director = "", string genre = "",
                 int year = 0, string synopsis = "") {
   Film film;
 
   if (title == "") {
-    cout << "Masukkan judul film: ";
-    getline(cin, title);
+    while (true) {
+      cout << "Masukkan judul film: ";
+      getline(cin, title);
+
+      if (!validateFilmTitle(headFilm, title)) {
+        printMessage("Judul film sudah digunakan");
+        continue;
+      }
+
+      if (title == "") {
+        printMessage("Judul film tidak boleh kosong");
+        continue;
+      }
+
+      break;
+    }
   }
+
   if (director == "") {
-    cout << "Masukkan sutradara film: ";
-    getline(cin, director);
+    while (true) {
+      cout << "Masukkan sutradara film: ";
+      getline(cin, director);
+
+      if (director == "") {
+        printMessage("Sutradara film tidak boleh kosong");
+        continue;
+      }
+
+      break;
+    }
   }
+
   if (genre == "") {
-    cout << "Masukkan genre film: ";
-    getline(cin, genre);
+    while (true) {
+      cout << "Masukkan genre film: ";
+      getline(cin, genre);
+
+      if (genre == "") {
+        printMessage("Genre film tidak boleh kosong");
+        continue;
+      }
+
+      break;
+    }
   }
+
   if (year == 0) {
-    cout << "Masukkan tahun film: ";
-    cin >> year;
-    cin.ignore(numeric_limits<streamsize>::max(), '\n');
+    while (true) {
+      cout << "Masukkan tahun film: ";
+      if (!(cin >> year)) {
+        cin.clear();
+        cin.ignore(numeric_limits<streamsize>::max(), '\n');
+        printMessage("Input tidak valid");
+        continue;
+      }
+      cin.ignore(numeric_limits<streamsize>::max(), '\n');
+
+      if (year < 0) {
+        printMessage("Tahun film tidak boleh negatif");
+        continue;
+      } else if (year > 2023) {
+        printMessage("Tahun film tidak boleh lebih dari 2023");
+        continue;
+      }
+
+      break;
+    }
   }
 
   if (synopsis == "") {
-    cout << "Masukkan sinopsis film: ";
-    getline(cin, synopsis);
+    while (true) {
+      cout << "Masukkan sinopsis film: ";
+      getline(cin, synopsis);
+
+      if (synopsis == "") {
+        printMessage("Sinopsis film tidak boleh kosong");
+        continue;
+      }
+
+      break;
+    }
   }
 
   film.id = filmCount + 1;
@@ -663,6 +736,15 @@ FilmNode *searchFilmByTitle(FilmNode *headFilm, const string &keyword) {
   return resultHead;
 }
 
+bool checkIfEmpty(FilmNode *headFilm) {
+  if (headFilm == NULL) {
+    printMessage("Belum ada data film.");
+    return true;
+  }
+
+  return false;
+}
+
 // TODO: Stack
 
 void rateFilm(User *user, FilmNode *headFilm, int filmId, int rating) {
@@ -679,7 +761,6 @@ void rateFilm(User *user, FilmNode *headFilm, int filmId, int rating) {
 /*
   Menu Admin (CRUD). Pada menu ini admin dapat melakukan operasi CRUD
 */
-
 void adminMenu() {
   while (true) {
     clearScreen();
@@ -726,6 +807,10 @@ void adminMenu() {
       readFilm(headFilm);
       printMessage("");
     } else if (choice == 3) {
+      if (!checkIfEmpty(headFilm)) {
+        continue;
+      }
+
       readFilm(headFilm);
 
       while (true) {
@@ -745,6 +830,10 @@ void adminMenu() {
       saveUserRatingFile(headUser);
       printMessage("Berhasil menghapus film.");
     } else if (choice == 4) {
+      if (!checkIfEmpty(headFilm)) {
+        continue;
+      }
+
       string keyword;
       cout << "Masukkan Judul Film Yang Ingin Di Cari : ";
       getline(cin, keyword);
@@ -802,6 +891,10 @@ void userMenu() {
       printMessage("");
     } else if (choice == 2) {
       clearScreen();
+      if (!checkIfEmpty(headFilm)) {
+        continue;
+      }
+
       while (true) {
         readFilm(headFilm);
 
@@ -814,9 +907,10 @@ void userMenu() {
           continue;
         }
 
-        int rating = inputRating(*findByPosition(headFilm, position));
+        Film *film = findByPosition(headFilm, position);
+        int rating = inputRating(*film);
 
-        rateFilm(currentUser, headFilm, position, rating);
+        rateFilm(currentUser, headFilm, film->id, rating);
 
         break;
       }
@@ -825,6 +919,10 @@ void userMenu() {
       printMessage("Berhasil memberikan rating.");
 
     } else if (choice == 3) {
+      if (!checkIfEmpty(headFilm)) {
+        continue;
+      }
+
       while (true) {
         readFilm(headFilm);
         int position = inputPosition(filmCount);
@@ -842,6 +940,11 @@ void userMenu() {
       saveUserRatingFile(headUser);
       printMessage("Berhasil menghapus rating.");
     } else if (choice == 4) {
+
+      if (!checkIfEmpty(headFilm)) {
+        continue;
+      }
+
       string keyword;
       cout << "Masukkan Judul Film Yang Ingin Di Cari : ";
       getline(cin, keyword);
