@@ -202,6 +202,7 @@ Film createFilm(string title = "", string director = "", string genre = "",
   film.director = director;
   film.genre = genre;
   film.year = year;
+  film.synopsis = synopsis;
 
   return film;
 }
@@ -399,13 +400,12 @@ void readFilm(FilmNode *headFilm) {
   FilmNode *temp = headFilm;
   while (temp != NULL) {
     cout << "====================" << endl;
-    cout << "|ID: " << temp->film.id << endl;
-    cout << "|Judul: " << temp->film.title << endl;
-    cout << "|Sutradara: " << temp->film.director << endl;
-    cout << "|Genre: " << temp->film.genre << endl;
-    cout << "|Tahun: " << temp->film.year << endl;
-    cout << "|Sinopsis: " << temp->film.synopsis << endl;
-    cout << "====================" << endl;
+    cout << "ID: " << temp->film.id << endl;
+    cout << "Judul: " << temp->film.title << endl;
+    cout << "Sutradara: " << temp->film.director << endl;
+    cout << "Genre: " << temp->film.genre << endl;
+    cout << "Tahun: " << temp->film.year << endl;
+    cout << "Sinopsis: " << temp->film.synopsis << endl;
 
     float rating = calculateAvgRating(headFilm, headUser, temp->film.id);
     if (isnan(rating) || rating == 0) {
@@ -428,7 +428,7 @@ void readFilm(FilmNode *headFilm) {
   }
 }
 
-// TODO: searching sama sorting
+// TODO: sorting
 // Searching Menggunakan Metode Boyer-Moore
 
 // mendefinisikan metode pencarian menggunakan metode boyer moore
@@ -528,9 +528,9 @@ void rateFilm(User *user, FilmNode *headFilm, int filmId, int rating) {
   Menu Admin (CRUD). Pada menu ini admin dapat melakukan operasi CRUD
 */
 
-// TODO: bagusin lagi menunya
 void adminMenu() {
   while (true) {
+    clearScreen();
     cout << "=====================" << endl;
     cout << "|   Pilihan Menu    |" << endl;
     cout << "|[0] Keluar         |" << endl;
@@ -612,8 +612,10 @@ void adminMenu() {
 void userMenu() {
   while (true) {
     clearScreen();
-    cout << "===== Selamat Datang " << currentUser->username
-         << " =====" << endl;
+    cout << "Selamat datang " << currentUser->username << endl;
+    cout << endl;
+
+    cout << "======================" << endl;
     cout << "|    Pilihan Menu    |" << endl;
     cout << "|[0] Keluar          |" << endl;
     cout << "|[1] Lihat Film      |" << endl;
@@ -640,6 +642,7 @@ void userMenu() {
       while (true) {
         readFilm(headFilm);
 
+        cout << endl;
         int position = inputPosition(filmCount);
         if (position == -1) {
           continue;
