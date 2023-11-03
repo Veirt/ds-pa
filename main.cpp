@@ -1,6 +1,8 @@
 #include <cmath>
+#include <fstream>
 #include <iostream>
 #include <limits>
+#include <sstream>
 #include <unordered_map>
 
 using namespace std;
@@ -115,13 +117,29 @@ int inputRating(Film film) {
   }
 }
 
-Film findByPosition(FilmNode *headFilm, int position) {
+Film *findByPosition(FilmNode *headFilm, int position) {
   FilmNode *temp = headFilm;
   for (int i = 0; i < position - 1; i++) {
+
+    temp = temp->next;
+    if (temp == NULL) {
+      return NULL;
+    }
+  }
+
+  return &temp->film;
+}
+
+Film *findByTitle(FilmNode *headFilm, string title) {
+  FilmNode *temp = headFilm;
+  while (temp != NULL) {
+    if (temp->film.title == title) {
+      return &temp->film;
+    }
     temp = temp->next;
   }
 
-  return temp->film;
+  return NULL;
 }
 
 User *registerUser(UserNode **headUser, User user) {
@@ -143,6 +161,18 @@ User *registerUser(UserNode **headUser, User user) {
   return &newNode->user;
 }
 
+bool validateUsername(UserNode *headUser, string username) {
+  UserNode *temp = headUser;
+  while (temp != NULL) {
+    if (temp->user.username == username) {
+      return false;
+    }
+    temp = temp->next;
+  }
+
+  return true;
+}
+
 void readUser(UserNode *headUser) {
   UserNode *temp = headUser;
   while (temp != NULL) {
@@ -151,22 +181,22 @@ void readUser(UserNode *headUser) {
   }
 }
 
-User createUser(string username = "", string password = "",
-                bool admin = false) {
-  User user;
+User createUser(string username = "", string password = "", bool admin = false,
+                unordered_map<int, int> filmRatings = {}) {
+  User user = *new User;
 
   if (username == "") {
     cout << "Masukkan username: ";
-    cin >> username;
+    getline(cin, username);
   }
   if (password == "") {
     cout << "Masukkan password: ";
-    cin >> password;
+    getline(cin, password);
   }
   user.username = username;
   user.password = password;
   user.admin = admin;
-  user.filmRatings = {};
+  user.filmRatings = filmRatings;
 
   return user;
 }
@@ -190,6 +220,7 @@ Film createFilm(string title = "", string director = "", string genre = "",
   if (year == 0) {
     cout << "Masukkan tahun film: ";
     cin >> year;
+    cin.ignore(numeric_limits<streamsize>::max(), '\n');
   }
 
   if (synopsis == "") {
@@ -358,6 +389,125 @@ void updateFilm(FilmNode **headFilm, Film film, int position) {
   temp->film = film;
 }
 
+/*
+  Function untuk menyimpan data user ke file dengan format tsv
+*/
+void saveUserFile(UserNode *headNode) {
+  ofstream file;
+  file.open("user.tsv");
+
+  UserNode *temp = headNode;
+  while (temp != NULL) {
+    file << temp->user.username << "\t" << temp->user.password << "\t"
+         << temp->user.admin << endl;
+    temp = temp->next;
+  }
+
+  file.close();
+}
+
+void saveUserRatingFile(UserNode *headNode) {
+  ofstream file;
+  file.open("rating.tsv");
+
+  UserNode *temp = headNode;
+  while (temp != NULL) {
+    for (auto const &x : temp->user.filmRatings) {
+      Film *film = findByPosition(headFilm, x.first);
+      if (film == NULL) {
+        continue;
+      }
+      file << temp->user.username << "\t" << film->title << "\t" << x.second
+           << endl;
+    }
+
+    temp = temp->next;
+  }
+
+  file.close();
+}
+
+/*
+  Function untuk menyimpan data film ke file dengan format tsv
+*/
+void saveFilmFile(FilmNode &headNode) {
+  ofstream file;
+  file.open("film.tsv");
+
+  FilmNode *temp = &headNode;
+  while (temp != NULL) {
+    file << temp->film.id << "\t" << temp->film.title << "\t"
+         << temp->film.director << "\t" << temp->film.genre << "\t"
+         << temp->film.year << "\t" << temp->film.synopsis << endl;
+    temp = temp->next;
+  }
+
+  file.close();
+}
+
+/*
+  Function untuk mengambil data user dari file dengan format tsv
+*/
+void loadUserFile(UserNode **headNode) {
+  ifstream file;
+  file.open("user.tsv");
+
+  string line;
+  while (getline(file, line)) {
+    stringstream ss(line);
+    string username, password, admin;
+    getline(ss, username, '\t');
+    getline(ss, password, '\t');
+    getline(ss, admin, '\t');
+
+    User user = createUser(username, password, admin == "1");
+
+    ifstream ratingFile;
+    ratingFile.open("rating.tsv");
+    string ratingLine;
+    while (getline(ratingFile, line)) {
+      stringstream ratingSs(line);
+      string username, filmTitle, rating;
+      getline(ratingSs, username, '\t');
+      getline(ratingSs, filmTitle, '\t');
+      getline(ratingSs, rating, '\t');
+
+      if (user.username == username) {
+        Film *film = findByTitle(headFilm, filmTitle);
+        int ratingInt = stoi(rating);
+        user.filmRatings[film->id] = ratingInt;
+      }
+    }
+
+    registerUser(headNode, user);
+  }
+
+  file.close();
+}
+
+void loadFilmFile(FilmNode **headNode) {
+  ifstream file;
+  file.open("film.tsv");
+
+  string id, title, director, genre, year, synopsis;
+  string line;
+  while (getline(file, line)) {
+    stringstream ss(line);
+    getline(ss, id, '\t');
+    getline(ss, title, '\t');
+    getline(ss, director, '\t');
+    getline(ss, genre, '\t');
+    getline(ss, year, '\t');
+    getline(ss, synopsis, '\t');
+
+    addFilmAtLast(headNode,
+                  createFilm(title, director, genre, stoi(year), synopsis),
+                  filmCount);
+  }
+
+  file.close();
+}
+
 float calculateAvgRating(FilmNode *headFilm, UserNode *headUser, int filmId) {
   FilmNode *temp = headFilm;
   int totalRating = 0;
@@ -398,9 +548,10 @@ int getMyRating(User *user, int filmId) {
 
 void readFilm(FilmNode *headFilm) {
   FilmNode *temp = headFilm;
+  int num = 1;
   while (temp != NULL) {
     cout << "====================" << endl;
-    cout << "ID: " << temp->film.id << endl;
+    cout << "Nomor: " << num << endl;
     cout << "Judul: " << temp->film.title << endl;
     cout << "Sutradara: " << temp->film.director << endl;
     cout << "Genre: " << temp->film.genre << endl;
@@ -425,6 +576,7 @@ void readFilm(FilmNode *headFilm) {
     }
 
     temp = temp->next;
+    num++;
   }
 }
 
@@ -551,13 +703,23 @@ void adminMenu() {
     }
 
     if (choice == 1) {
-      readFilm(headFilm);
+      clearScreen();
 
-      int position;
-      cout << "Masukkan posisi film: ";
-      cin >> position;
-      cin.ignore();
-      addFilmSpecific(&headFilm, createFilm(), filmCount, position);
+      while (true) {
+        readFilm(headFilm);
+        int position = inputPosition(filmCount);
+        if (position == -1) {
+          continue;
+        } else if (position > filmCount + 1) {
+          printMessage("Posisi tidak valid");
+          continue;
+        }
+
+        addFilmSpecific(&headFilm, createFilm(), filmCount, position);
+        break;
+      }
+
+      saveFilmFile(*headFilm);
       printMessage("Berhasil menambahkan film.");
     } else if (choice == 2) {
       clearScreen();
@@ -579,9 +741,10 @@ void adminMenu() {
         break;
       }
 
+      saveFilmFile(*headFilm);
+      saveUserRatingFile(headUser);
       printMessage("Berhasil menghapus film.");
     } else if (choice == 4) {
-      // todo
       string keyword;
       cout << "Masukkan Judul Film Yang Ingin Di Cari : ";
       getline(cin, keyword);
@@ -651,12 +814,14 @@ void userMenu() {
           continue;
         }
 
-        int rating = inputRating(findByPosition(headFilm, position));
+        int rating = inputRating(*findByPosition(headFilm, position));
 
         rateFilm(currentUser, headFilm, position, rating);
 
         break;
       }
+
+      saveUserRatingFile(headUser);
       printMessage("Berhasil memberikan rating.");
 
     } else if (choice == 3) {
@@ -673,10 +838,10 @@ void userMenu() {
         rateFilm(currentUser, headFilm, position, 0);
         break;
       }
+
+      saveUserRatingFile(headUser);
       printMessage("Berhasil menghapus rating.");
     } else if (choice == 4) {
-      // todo
-
       string keyword;
       cout << "Masukkan Judul Film Yang Ingin Di Cari : ";
       getline(cin, keyword);
@@ -734,23 +899,25 @@ void loginMenu() {
   }
 }
 
-int main() {
-  registerUser(&headUser, createUser("admin", "admin", true));
-  User *user = registerUser(&headUser, createUser("user", "user", false));
-  User *user2 = registerUser(&headUser, createUser("user2", "user2", false));
+void registerMenu() {
+  while (true) {
+    User newUser = createUser();
+    if (!validateUsername(headUser, newUser.username)) {
+      printMessage("Username sudah digunakan");
+      continue;
+    }
 
-  addFilmAtLast(
-      &headFilm,
-      createFilm("Film 1", "Director 1", "Genre 1", 2021, "Synopsis 1"),
-      filmCount);
-  addFilmAtLast(
-      &headFilm,
-      createFilm("Film 2", "Director 2", "Genre 2", 2021, "Synopsis 2"),
-      filmCount);
-  addFilmAtLast(
-      &headFilm,
-      createFilm("Film 3", "Director 3", "Genre 3", 2021, "Synopsis 3"),
-      filmCount);
+    registerUser(&headUser, newUser);
+    break;
+  }
+
+  saveUserFile(headUser);
+  printMessage("Berhasil mendaftar.");
+}
+
+int main() {
+  loadFilmFile(&headFilm);
+  loadUserFile(&headUser);
 
   while (true) {
     // reset kembali menjadi NULL
@@ -773,7 +940,7 @@ int main() {
       loginMenu();
       break;
     case 2:
-      registerUser(&headUser, createUser());
+      registerMenu();
       break;
     }
   }
