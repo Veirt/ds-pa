@@ -56,12 +56,11 @@ void printMessage(string message) {
 
 /*
   Function untuk mengambil input menu dari user, serta melakukan validasi
-  Return: int
 */
 int inputMenu() {
   int menu;
   cout << "Masukkan pilihan menu: ";
-  if (!(cin >> menu)) {
+  if (!(cin >> menu) || menu < 0) {
     cin.clear();
     cin.ignore(numeric_limits<streamsize>::max(), '\n');
     printMessage("Input tidak valid");
@@ -72,6 +71,11 @@ int inputMenu() {
   }
 }
 
+/*
+  Function untuk mengambil input posisi dari user, serta melakukan validasi
+  Jika input tidak valid, maka akan mengembalikan -1. -1 Akan dihandle saat
+  pemanggilan.
+*/
 int inputPosition(int filmCount) {
   int position;
 
@@ -91,6 +95,9 @@ int inputPosition(int filmCount) {
   }
 }
 
+/*
+  Function untuk mengambil input rating dari user, dan untuk melakukan validasi
+*/
 int inputRating(Film film) {
   int rating;
 
@@ -104,9 +111,9 @@ int inputRating(Film film) {
       continue;
     }
 
-    if (rating < 0 || rating > 10) {
+    if (rating < 1 || rating > 10) {
       cin.ignore(numeric_limits<streamsize>::max(), '\n');
-      printMessage("Rating harus diantara 0 sampai 10");
+      printMessage("Rating harus diantara 1 sampai 10");
       continue;
     }
 
@@ -141,6 +148,10 @@ Film *findByTitle(FilmNode *headFilm, string title) {
   return NULL;
 }
 
+/*
+  Function untuk mencari user berdasarkan username.
+  Digunakan saat register, dan ketika load data dari file.
+*/
 User *findByUsername(UserNode *headUser, string username) {
   UserNode *temp = headUser;
   while (temp != NULL) {
@@ -153,6 +164,10 @@ User *findByUsername(UserNode *headUser, string username) {
   return NULL;
 }
 
+/*
+  Function untuk menambahkan user baru ke linked list.
+  registerUser ini sama seperti addLast ke linked list user.
+*/
 User *registerUser(UserNode **headUser, User user) {
   UserNode *newNode = new UserNode;
   newNode->user = user;
@@ -170,18 +185,6 @@ User *registerUser(UserNode **headUser, User user) {
   }
 
   return &newNode->user;
-}
-
-bool validateUsername(UserNode *headUser, string username) {
-  UserNode *temp = headUser;
-  while (temp != NULL) {
-    if (temp->user.username == username) {
-      return false;
-    }
-    temp = temp->next;
-  }
-
-  return true;
 }
 
 void readUser(UserNode *headUser) {
@@ -476,7 +479,7 @@ void updateFilm(FilmNode **headFilm, Film film, int position) {
 /*
   Function untuk menyimpan data user ke file dengan format tsv
 */
-void saveUserFile(UserNode *headNode) {
+void saveToUserTsv(UserNode *headNode) {
   ofstream file;
   file.open("user.tsv");
 
@@ -802,6 +805,7 @@ void adminMenu() {
       break;
     }
 
+    // #### TAMBAH FILM ####
     if (choice == 1) {
       clearScreen();
 
@@ -821,11 +825,15 @@ void adminMenu() {
 
       saveFilmFile(*headFilm);
       printMessage("Berhasil menambahkan film.");
-    } else if (choice == 2) {
+    }
+    // #### TAMPILKAN FILM ####
+    else if (choice == 2) {
       clearScreen();
       readFilm(headFilm);
       printMessage("");
-    } else if (choice == 3) {
+    }
+    // #### HAPUS FILM ####
+    else if (choice == 3) {
       if (checkIfEmpty(headFilm)) {
         continue;
       }
@@ -848,7 +856,9 @@ void adminMenu() {
       saveFilmFile(*headFilm);
       saveUserRatingFile(headUser);
       printMessage("Berhasil menghapus film.");
-    } else if (choice == 4) {
+    }
+    // #### CARI FILM ####
+    else if (choice == 4) {
       if (checkIfEmpty(headFilm)) {
         continue;
       }
@@ -874,8 +884,12 @@ void adminMenu() {
         }
       }
 
-    } else if (choice == 5) {
+    }
+    // #### URUTKAN FILM ####
+    else if (choice == 5) {
       // todo
+    } else {
+      printMessage("Pilihan menu tidak ada");
     }
   }
 }
@@ -904,11 +918,15 @@ void userMenu() {
       break;
     }
 
+    // #### LIHAT FILM ####
     if (choice == 1) {
       clearScreen();
       readFilm(headFilm);
       printMessage("");
-    } else if (choice == 2) {
+    }
+
+    // #### RATE FILM ####
+    else if (choice == 2) {
       clearScreen();
       if (checkIfEmpty(headFilm)) {
         continue;
@@ -937,7 +955,9 @@ void userMenu() {
       saveUserRatingFile(headUser);
       printMessage("Berhasil memberikan rating.");
 
-    } else if (choice == 3) {
+    }
+    // #### HAPUS RATING FILM ####
+    else if (choice == 3) {
       if (checkIfEmpty(headFilm)) {
         continue;
       }
@@ -964,7 +984,9 @@ void userMenu() {
 
       saveUserRatingFile(headUser);
       printMessage("Berhasil menghapus rating.");
-    } else if (choice == 4) {
+    }
+    // #### CARI FILM ####
+    else if (choice == 4) {
 
       if (checkIfEmpty(headFilm)) {
         continue;
@@ -990,12 +1012,15 @@ void userMenu() {
           delete temp;
         }
       }
+    } else {
+      printMessage("Pilihan menu tidak ada");
     }
   }
 }
 
 User *login(UserNode *headUser, string username, string password) {
   UserNode *temp = headUser;
+  // traversal dengan mencocokkan username dan password
   while (temp != NULL) {
     if (temp->user.username == username && temp->user.password == password) {
       return &temp->user;
@@ -1006,6 +1031,11 @@ User *login(UserNode *headUser, string username, string password) {
   return NULL;
 }
 
+/*
+  Menu Login. Pada menu ini user akan login.
+  Tergantung apa yang akan di return dari function login, maka akan diarahkan
+  ke menu admin atau user.
+*/
 void loginMenu() {
   string username, password;
   cout << "Masukkan username: ";
@@ -1027,10 +1057,14 @@ void loginMenu() {
   }
 }
 
+/*
+  Menu Register. Pada menu ini user dapat melakukan registrasi
+*/
 void registerMenu() {
   while (true) {
     User newUser = createUser();
-    if (!validateUsername(headUser, newUser.username)) {
+    // validasi username, kalau sudah ada, tampilkan pesan error
+    if (findByUsername(headUser, newUser.username) != NULL) {
       printMessage("Username sudah digunakan");
       continue;
     }
@@ -1039,7 +1073,7 @@ void registerMenu() {
     break;
   }
 
-  saveUserFile(headUser);
+  saveToUserTsv(headUser);
   printMessage("Berhasil mendaftar.");
 }
 
@@ -1070,6 +1104,9 @@ int main() {
       break;
     case 2:
       registerMenu();
+      break;
+    default:
+      printMessage("Pilihan menu tidak ada");
       break;
     }
   }
