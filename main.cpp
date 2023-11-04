@@ -141,6 +141,18 @@ Film *findByTitle(FilmNode *headFilm, string title) {
   return NULL;
 }
 
+User *findByUsername(UserNode *headUser, string username) {
+  UserNode *temp = headUser;
+  while (temp != NULL) {
+    if (temp->user.username == username) {
+      return &temp->user;
+    }
+    temp = temp->next;
+  }
+
+  return NULL;
+}
+
 User *registerUser(UserNode **headUser, User user) {
   UserNode *newNode = new UserNode;
   newNode->user = user;
@@ -534,24 +546,32 @@ void loadUserFile(UserNode **headNode) {
 
     User user = createUser(username, password, admin == "1");
 
-    ifstream ratingFile;
-    ratingFile.open("rating.tsv");
-    string ratingLine;
-    while (getline(ratingFile, line)) {
-      stringstream ratingSs(line);
-      string username, filmTitle, rating;
-      getline(ratingSs, username, '\t');
-      getline(ratingSs, filmTitle, '\t');
-      getline(ratingSs, rating, '\t');
+    registerUser(headNode, user);
+  }
 
-      if (user.username == username) {
-        Film *film = findByTitle(headFilm, filmTitle);
-        int ratingInt = stoi(rating);
-        user.filmRatings[film->title] = ratingInt;
-      }
+  file.close();
+}
+
+void loadRatingFile(UserNode **headNode) {
+  ifstream file;
+  file.open("rating.tsv");
+
+  string line;
+  while (getline(file, line)) {
+    stringstream ss(line);
+    string username, filmTitle, rating;
+    getline(ss, username, '\t');
+    getline(ss, filmTitle, '\t');
+    getline(ss, rating, '\t');
+
+    User *user = findByUsername(*headNode, username);
+    if (user == NULL) {
+      continue;
     }
 
-    registerUser(headNode, user);
+    Film *film = findByTitle(headFilm, filmTitle);
+    int ratingInt = stoi(rating);
+    user->filmRatings[film->title] = ratingInt;
   }
 
   file.close();
@@ -1026,6 +1046,7 @@ void registerMenu() {
 int main() {
   loadFilmFile(&headFilm);
   loadUserFile(&headUser);
+  loadRatingFile(&headUser);
 
   while (true) {
     // reset kembali menjadi NULL
