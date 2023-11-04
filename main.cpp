@@ -59,7 +59,7 @@ void printMessage(string message) {
 */
 int inputMenu() {
   int menu;
-  cout << "Masukkan pilihan menu: ";
+  cout << "Masukkan pilihan: ";
   if (!(cin >> menu) || menu < 0) {
     cin.clear();
     cin.ignore(numeric_limits<streamsize>::max(), '\n');
@@ -121,6 +121,85 @@ int inputRating(Film film) {
 
     return rating;
   }
+}
+
+string inputGenre() {
+  string genre = "";
+
+  while (true) {
+    clearScreen();
+    if (genre != "") {
+      cout << "Genre film yang telah dipilih: " << genre << endl;
+    }
+    cout << "Pilihan Genre: " << endl;
+    cout << "0. Selesai" << endl;
+    cout << "1. Action" << endl;
+    cout << "2. Adventure" << endl;
+    cout << "3. Comedy" << endl;
+    cout << "4. Drama" << endl;
+    cout << "5. Fantasy" << endl;
+    cout << "6. Horror" << endl;
+    cout << "7. Mystery" << endl;
+    cout << "8. Romance" << endl;
+
+    int choice = inputMenu();
+    if (choice == -1) {
+      continue;
+    }
+
+    if (choice == 0) {
+      if (genre == "") {
+        printMessage("Genre tidak boleh kosong");
+        continue;
+      }
+      break;
+    }
+
+    string newGenre;
+    switch (choice) {
+    case 1:
+      newGenre = "Action";
+      break;
+    case 2:
+      newGenre = "Adventure";
+      break;
+    case 3:
+      newGenre = "Comedy";
+      break;
+    case 4:
+      newGenre = "Drama";
+      break;
+    case 5:
+      newGenre = "Fantasy";
+      break;
+    case 6:
+      newGenre = "Horror";
+      break;
+    case 7:
+      newGenre = "Mystery";
+      break;
+    case 8:
+      newGenre = "Romance";
+      break;
+    default:
+      printMessage("Pilihan tidak valid");
+      continue;
+    }
+
+    // cek apakah genre sudah dipilih
+    if (genre.find(newGenre) != string::npos) {
+      printMessage("Genre sudah dipilih");
+      continue;
+    }
+
+    if (genre != "") {
+      genre += ", ";
+    }
+
+    genre += newGenre;
+  }
+
+  return genre;
 }
 
 Film *findByPosition(FilmNode *headFilm, int position) {
@@ -266,8 +345,7 @@ Film createFilm(string title = "", string director = "", string genre = "",
 
   if (genre == "") {
     while (true) {
-      cout << "Masukkan genre film: ";
-      getline(cin, genre);
+      genre = inputGenre();
 
       if (genre == "") {
         printMessage("Genre film tidak boleh kosong");
@@ -363,8 +441,8 @@ void addFilmSpecific(FilmNode **headFilm, Film film, int &count, int position) {
   }
 
   // pake yang udah ada kalo nambahin di posisi terakhir
-  // misal ada 5 data, kalo mau nambahin di posisi 6, berarti nambahin di posisi
-  // terakhir
+  // misal ada 5 data, kalo mau nambahin di posisi 6, berarti nambahin di
+  // posisi terakhir
   if (position == count + 1) {
     addFilmAtLast(headFilm, film, count);
     return;
@@ -699,12 +777,12 @@ int boyerMooreSearch(const string &text, const string &pattern) {
         i; // untuk menconvert patternya ke lower case
   }
   int s = 0;             // mengatur posisi awal pencarian
-  while (s <= (n - m)) { // perulangan dimana s akan selalu melanjut hingga s <=
-                         // panjang teks-panjang pattern
+  while (s <= (n - m)) { // perulangan dimana s akan selalu melanjut hingga s
+                         // <= panjang teks-panjang pattern
     int j = m - 1;       // variabel j digunakan untuk mengatur posisi untuk
                          // mencocokkan pattern dengan karakter di teks
-    // Perulangan ini akan terus berulang selama ada karakter yang masih bisa di
-    // cocokkan
+    // Perulangan ini akan terus berulang selama ada karakter yang masih bisa
+    // di cocokkan
     while (j >= 0 &&
            tolower(pattern[j]) ==
                tolower(text[s + j])) { // untuk merubah text ke lower case
@@ -724,17 +802,16 @@ int boyerMooreSearch(const string &text, const string &pattern) {
   return -1; // Fungsi mengembalikan -1 bila Pattern Tidak Ditemukan
 }
 
-// fungsi yang menggunakan metode boyer moore yang ada yang dapat mencari judul
-// film
-// menggunakan keyword dan fungsi ini akan mengembalikan daftar film sesuai
-// dengan kata kunci yang dimasukkan(pattern)
+// fungsi yang menggunakan metode boyer moore yang ada yang dapat mencari
+// judul film menggunakan keyword dan fungsi ini akan mengembalikan daftar
+// film sesuai dengan kata kunci yang dimasukkan(pattern)
 FilmNode *searchFilmByTitle(FilmNode *headFilm, const string &keyword) {
   FilmNode *resultHead = nullptr;
   FilmNode *resultTail = nullptr;
 
-  // temp digunakan sebagai iterator dimana fungsi akan memerikasa apakah judul
-  // film cocok dengan keyword/patter yang di inputkan dengan menggunkana
-  // booyerMooreSearch
+  // temp digunakan sebagai iterator dimana fungsi akan memerikasa apakah
+  // judul film cocok dengan keyword/patter yang di inputkan dengan
+  // menggunkana booyerMooreSearch
   FilmNode *temp = headFilm;
   while (temp != nullptr) {
     if (boyerMooreSearch(temp->film.title, keyword) != -1) {
@@ -811,6 +888,7 @@ void adminMenu() {
 
       while (true) {
         readFilm(headFilm);
+        cout << endl;
         int position = inputPosition(filmCount);
         if (position == -1) {
           continue;
