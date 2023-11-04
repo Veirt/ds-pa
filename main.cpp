@@ -11,11 +11,10 @@ struct User {
   string username;
   string password;
   bool admin;
-  unordered_map<int, int> filmRatings;
+  unordered_map<string, int> filmRatings;
 };
 
 struct Film {
-  int id; // unique identifier
   string title;
   string director;
   string genre;
@@ -182,7 +181,7 @@ void readUser(UserNode *headUser) {
 }
 
 User createUser(string username = "", string password = "", bool admin = false,
-                unordered_map<int, int> filmRatings = {}) {
+                unordered_map<string, int> filmRatings = {}) {
   User user = *new User;
 
   if (username == "") {
@@ -301,7 +300,6 @@ Film createFilm(string title = "", string director = "", string genre = "",
     }
   }
 
-  film.id = filmCount + 1;
   film.title = title;
   film.director = director;
   film.genre = genre;
@@ -370,11 +368,12 @@ void addFilmSpecific(FilmNode **headFilm, Film film, int &count, int position) {
   count++;
 }
 
-void deleteFilmRatings(UserNode **headUser, int filmId) {
+void deleteFilmRatings(UserNode **headUser, string filmTitle) {
   UserNode *temp = *headUser;
   while (temp != NULL) {
-    if (temp->user.filmRatings.find(filmId) != temp->user.filmRatings.end()) {
-      temp->user.filmRatings.erase(filmId);
+    if (temp->user.filmRatings.find(filmTitle) !=
+        temp->user.filmRatings.end()) {
+      temp->user.filmRatings.erase(filmTitle);
     }
     temp = temp->next;
   }
@@ -387,7 +386,7 @@ void deleteFilmAtFirst(FilmNode **headFilm, int &count) {
 
   FilmNode *temp = *headFilm;
   *headFilm = temp->next;
-  deleteFilmRatings(&headUser, temp->film.id);
+  deleteFilmRatings(&headUser, temp->film.title);
   delete temp;
   count--;
 }
@@ -401,7 +400,7 @@ void deleteFilmAtLast(FilmNode **headFilm, int &count) {
   while (temp->next->next != NULL) {
     temp = temp->next;
   }
-  deleteFilmRatings(&headUser, temp->next->film.id);
+  deleteFilmRatings(&headUser, temp->next->film.title);
   delete temp->next;
   temp->next = NULL;
   count--;
@@ -439,7 +438,7 @@ void deleteFilmSpecific(FilmNode **headFilm, int &count, int position) {
     temp = temp->next;
   }
   FilmNode *nextNode = temp->next;
-  deleteFilmRatings(&headUser, nextNode->film.id);
+  deleteFilmRatings(&headUser, nextNode->film.title);
   temp->next = temp->next->next;
   delete nextNode;
   count--;
@@ -486,7 +485,7 @@ void saveUserRatingFile(UserNode *headNode) {
   UserNode *temp = headNode;
   while (temp != NULL) {
     for (auto const &x : temp->user.filmRatings) {
-      Film *film = findByPosition(headFilm, x.first);
+      Film *film = findByTitle(headFilm, x.first);
       if (film == NULL) {
         continue;
       }
@@ -509,9 +508,9 @@ void saveFilmFile(FilmNode &headNode) {
 
   FilmNode *temp = &headNode;
   while (temp != NULL) {
-    file << temp->film.id << "\t" << temp->film.title << "\t"
-         << temp->film.director << "\t" << temp->film.genre << "\t"
-         << temp->film.year << "\t" << temp->film.synopsis << endl;
+    file << temp->film.title << "\t" << temp->film.director << "\t"
+         << temp->film.genre << "\t" << temp->film.year << "\t"
+         << temp->film.synopsis << endl;
     temp = temp->next;
   }
 
@@ -548,7 +547,7 @@ void loadUserFile(UserNode **headNode) {
       if (user.username == username) {
         Film *film = findByTitle(headFilm, filmTitle);
         int ratingInt = stoi(rating);
-        user.filmRatings[film->id] = ratingInt;
+        user.filmRatings[film->title] = ratingInt;
       }
     }
 
@@ -562,11 +561,10 @@ void loadFilmFile(FilmNode **headNode) {
   ifstream file;
   file.open("film.tsv");
 
-  string id, title, director, genre, year, synopsis;
+  string title, director, genre, year, synopsis;
   string line;
   while (getline(file, line)) {
     stringstream ss(line);
-    getline(ss, id, '\t');
     getline(ss, title, '\t');
     getline(ss, director, '\t');
     getline(ss, genre, '\t');
@@ -581,24 +579,25 @@ void loadFilmFile(FilmNode **headNode) {
   file.close();
 }
 
-float calculateAvgRating(FilmNode *headFilm, UserNode *headUser, int filmId) {
+float calculateAvgRating(FilmNode *headFilm, UserNode *headUser,
+                         string filmTitle) {
   FilmNode *temp = headFilm;
   int totalRating = 0;
   int totalUser = 0;
   while (temp != NULL) {
-    if (temp->film.id == filmId) {
+    if (temp->film.title == filmTitle) {
       UserNode *tempUser = headUser;
       while (tempUser != NULL) {
-        if (tempUser->user.filmRatings.find(filmId) !=
+        if (tempUser->user.filmRatings.find(filmTitle) !=
             tempUser->user.filmRatings.end()) {
 
           // kalo ratingnya 0, berarti belum pernah di rate/udah di hapus
-          if (tempUser->user.filmRatings[filmId] == 0) {
+          if (tempUser->user.filmRatings[filmTitle] == 0) {
             tempUser = tempUser->next;
             continue;
           }
 
-          totalRating += tempUser->user.filmRatings[filmId];
+          totalRating += tempUser->user.filmRatings[filmTitle];
           totalUser++;
         }
         tempUser = tempUser->next;
@@ -611,12 +610,12 @@ float calculateAvgRating(FilmNode *headFilm, UserNode *headUser, int filmId) {
   return (float)totalRating / totalUser;
 }
 
-int getMyRating(User *user, int filmId) {
-  if (user->filmRatings.find(filmId) == user->filmRatings.end()) {
+int getMyRating(User *user, string filmTitle) {
+  if (user->filmRatings.find(filmTitle) == user->filmRatings.end()) {
     return 0;
   }
 
-  return user->filmRatings[filmId];
+  return user->filmRatings[filmTitle];
 }
 
 void readFilm(FilmNode *headFilm) {
@@ -631,7 +630,7 @@ void readFilm(FilmNode *headFilm) {
     cout << "Tahun: " << temp->film.year << endl;
     cout << "Sinopsis: " << temp->film.synopsis << endl;
 
-    float rating = calculateAvgRating(headFilm, headUser, temp->film.id);
+    float rating = calculateAvgRating(headFilm, headUser, temp->film.title);
     if (isnan(rating) || rating == 0) {
       cout << "Rating: -" << endl;
     } else {
@@ -640,7 +639,7 @@ void readFilm(FilmNode *headFilm) {
 
     // kalo bukan admin, tampilkan ratingnya sendiri
     if (!currentUser->admin) {
-      int myRating = getMyRating(currentUser, temp->film.id);
+      int myRating = getMyRating(currentUser, temp->film.title);
       if (myRating == 0) {
         cout << "Rating saya: -" << endl;
       } else {
@@ -747,11 +746,11 @@ bool checkIfEmpty(FilmNode *headFilm) {
 
 // TODO: Stack
 
-void rateFilm(User *user, FilmNode *headFilm, int filmId, int rating) {
+void rateFilm(User *user, FilmNode *headFilm, string filmTitle, int rating) {
   FilmNode *temp = headFilm;
   while (temp != NULL) {
-    if (temp->film.id == filmId) {
-      user->filmRatings[filmId] = rating;
+    if (temp->film.title == filmTitle) {
+      user->filmRatings[filmTitle] = rating;
       return;
     }
     temp = temp->next;
@@ -910,7 +909,7 @@ void userMenu() {
         Film *film = findByPosition(headFilm, position);
         int rating = inputRating(*film);
 
-        rateFilm(currentUser, headFilm, film->id, rating);
+        rateFilm(currentUser, headFilm, film->title, rating);
 
         break;
       }
@@ -933,12 +932,13 @@ void userMenu() {
           continue;
         }
 
-        if (getMyRating(currentUser, position) == 0) {
+        Film *film = findByPosition(headFilm, position);
+        if (getMyRating(currentUser, film->title) == 0) {
           printMessage("Anda belum memberikan rating pada film ini.");
           continue;
         }
 
-        rateFilm(currentUser, headFilm, position, 0);
+        rateFilm(currentUser, headFilm, film->title, 0);
         break;
       }
 
