@@ -754,6 +754,95 @@ void readFilm(FilmNode *headFilm) {
 }
 
 // TODO: sorting
+
+void swapNodes(FilmNode **headFilm, FilmNode *a, FilmNode *b) {
+  if (a == b)
+    return;
+
+  FilmNode *prevA = NULL, *prevB = NULL, *curr = *headFilm;
+  while (curr) {
+    if (curr->next == a)
+      prevA = curr;
+    if (curr->next == b)
+      prevB = curr;
+    curr = curr->next;
+  }
+
+  if (a == *headFilm)
+    *headFilm = b;
+  else if (b == *headFilm)
+    *headFilm = a;
+
+  if (prevA)
+    prevA->next = b;
+  if (prevB)
+    prevB->next = a;
+
+  FilmNode *temp = a->next;
+  a->next = b->next;
+  b->next = temp;
+}
+
+FilmNode *findNode(FilmNode *headFilm, int idx) {
+  FilmNode *temp = headFilm;
+
+  for (int i = 0; i < idx; i++) {
+    temp = temp->next;
+  }
+
+  return temp;
+}
+
+void shellSort(FilmNode **headFilm, int filmCount, bool ascending) {
+  for (int gap = filmCount / 2; gap > 0; gap /= 2) {
+    for (int i = gap; i < filmCount; i++) {
+      FilmNode *temp = findNode(*headFilm, i);
+      int j;
+      for (j = i;
+           j >= gap && (ascending ? (findNode(*headFilm, j - gap)->film.title >
+                                     temp->film.title)
+                                  : (findNode(*headFilm, j - gap)->film.title <
+                                     temp->film.title));
+           j -= gap) {
+        swapNodes(headFilm, findNode(*headFilm, j),
+                  findNode(*headFilm, j - gap));
+      }
+    }
+  }
+}
+
+FilmNode *copyLinkedList(FilmNode *headFilm) {
+  FilmNode *newHead = nullptr;
+  FilmNode *tail = nullptr;
+  FilmNode *current = headFilm;
+
+  while (current != nullptr) {
+    FilmNode *newNode = new FilmNode;
+    newNode->film = current->film;
+    newNode->next = nullptr;
+
+    if (newHead == nullptr) {
+      newHead = newNode;
+      tail = newNode;
+    } else {
+      tail->next = newNode;
+      tail = newNode;
+    }
+
+    current = current->next;
+  }
+
+  return newHead;
+}
+
+void deleteLinkedList(FilmNode *headFilm) {
+  while (headFilm != nullptr) {
+    FilmNode *temp = headFilm;
+    headFilm = headFilm->next;
+    delete temp;
+  }
+}
+
 // Searching Menggunakan Metode Boyer-Moore
 
 // mendefinisikan metode pencarian menggunakan metode boyer moore
@@ -772,7 +861,7 @@ int boyerMooreSearch(const string &text, const string &pattern) {
     badChar[i] = -1; // karakter yang tidak ada didalam pola
   }
   for (int i = 0; i < m; i++) { // mengisi array badChar dengan lokasi
-                                // kemunculan karakter dalam pattern
+    // kemunculan karakter dalam pattern
     badChar[tolower(pattern[i])] =
         i; // untuk menconvert patternya ke lower case
   }
@@ -822,7 +911,6 @@ FilmNode *searchFilmByTitle(FilmNode *headFilm, const string &keyword) {
       if (resultHead == nullptr) {
         resultHead = newFilmNode;
         resultTail = resultHead;
-
       } else {
         resultTail->next = newFilmNode;
         resultTail = newFilmNode;
@@ -949,7 +1037,6 @@ void adminMenu() {
 
       if (searchResult == nullptr) {
         printMessage("Film Tidak Ditemukan");
-
       } else {
         cout << "Hasil Pencarian" << endl;
         readFilm(searchResult);
@@ -961,11 +1048,30 @@ void adminMenu() {
           delete temp;
         }
       }
-
     }
     // #### URUTKAN FILM ####
     else if (choice == 5) {
-      // todo
+      if (checkIfEmpty(headFilm)) {
+        continue;
+      }
+
+      clearScreen();
+      cout << "Pilihan Urutan Film:" << endl;
+      cout << "[1] Urutkan berdasarkan judul (A-Z)" << endl;
+      cout << "[2] Urutkan berdasarkan judul (Z-A)" << endl;
+      cout << "Pilihan: ";
+
+      int sortChoice = inputMenu();
+
+      if (sortChoice == 1) {
+        shellSort(&headFilm, filmCount, true);
+        printMessage("Film telah diurutkan berdasarkan judul (A-Z).");
+      } else if (sortChoice == 2) {
+        shellSort(&headFilm, filmCount, false);
+        printMessage("Film telah diurutkan berdasarkan judul (Z-A).");
+      } else {
+        printMessage("Pilihan urutan tidak valid.");
+      }
     } else {
       printMessage("Pilihan menu tidak ada");
     }
@@ -998,9 +1104,40 @@ void userMenu() {
 
     // #### LIHAT FILM ####
     if (choice == 1) {
+      if (checkIfEmpty(headFilm)) {
+        continue;
+      }
+
       clearScreen();
-      readFilm(headFilm);
-      printMessage("");
+      cout << "Pilihan Penglihatan Film:" << endl;
+      cout << "[1] Lihat tanpa diurutkan" << endl;
+      cout << "[2] Lihat dengan diurutkan berdasarkan judul (A-Z)" << endl;
+      cout << "[3] Lihat dengan diurutkan berdasarkan judul (Z-A)" << endl;
+      cout << "Pilihan: ";
+
+      int readChoice = inputMenu();
+
+      if (readChoice == 1) {
+        clearScreen();
+        readFilm(headFilm);
+        printMessage("");
+      } else if (readChoice == 2) {
+        FilmNode *sortedCopy = copyLinkedList(headFilm);
+        shellSort(&sortedCopy, filmCount, true);
+        clearScreen();
+        readFilm(sortedCopy);
+        printMessage("");
+        deleteLinkedList(sortedCopy);
+      } else if (readChoice == 3) {
+        FilmNode *sortedCopy = copyLinkedList(headFilm);
+        shellSort(&sortedCopy, filmCount, false);
+        clearScreen();
+        readFilm(sortedCopy);
+        printMessage("");
+        deleteLinkedList(sortedCopy);
+      } else {
+        printMessage("Pilihan Lihat tidak valid.");
+      }
     }
 
     // #### RATE FILM ####
@@ -1032,7 +1169,6 @@ void userMenu() {
 
       saveUserRatingFile(headUser);
       printMessage("Berhasil memberikan rating.");
-
     }
     // #### HAPUS RATING FILM ####
     else if (choice == 3) {
@@ -1078,7 +1214,6 @@ void userMenu() {
 
       if (searchResult == nullptr) {
         printMessage("Film Tidak Ditemukan");
-
       } else {
         cout << "Hasil Pencarian" << endl;
         readFilm(searchResult);
