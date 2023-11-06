@@ -32,6 +32,14 @@ struct UserNode {
   UserNode *next;
 };
 
+struct HistoryStack {
+  string title;
+  HistoryStack *next;
+};
+
+// History
+HistoryStack *topHistory = NULL;
+
 // Operasinya akan ada addFirst, addLast, addSpecific, Update, deleteFirst,
 // deleteLast, deleteSpecific
 FilmNode *headFilm = NULL;
@@ -92,6 +100,30 @@ int inputPosition(int filmCount) {
   } else {
     cin.ignore(numeric_limits<streamsize>::max(), '\n');
     return position;
+  }
+}
+
+void pushHistory(string title) {
+  HistoryStack *newNode = new HistoryStack;
+  newNode->title = title;
+  newNode->next = NULL;
+
+  if (topHistory == NULL) {
+    topHistory = newNode;
+  } else {
+    HistoryStack *temp = topHistory;
+    while (temp->next != NULL) {
+      temp = temp->next;
+    }
+    temp->next = newNode;
+  }
+}
+
+void readHistory() {
+  HistoryStack *temp = topHistory;
+  while (temp != NULL) {
+    cout << temp->title << endl;
+    temp = temp->next;
   }
 }
 
@@ -979,6 +1011,7 @@ void adminMenu() {
     cout << "|[3] Hapus Film     |" << endl;
     cout << "|[4] Cari Film      |" << endl;
     cout << "|[5] Urutkan Film   |" << endl;
+    cout << "|[6] Lihat History  |" << endl;
     cout << "=====================" << endl;
 
     int choice = inputMenu();
@@ -1005,7 +1038,9 @@ void adminMenu() {
           continue;
         }
 
-        addFilmSpecific(&headFilm, createFilm(), filmCount, position);
+        Film film = createFilm();
+        addFilmSpecific(&headFilm, film, filmCount, position);
+        pushHistory("Menambahkan film " + film.title);
         break;
       }
 
@@ -1016,6 +1051,7 @@ void adminMenu() {
     else if (choice == 2) {
       clearScreen();
       readFilm(headFilm);
+      pushHistory("Admin melihat daftar film.");
       printMessage("");
     }
     // #### HAPUS FILM ####
@@ -1035,6 +1071,8 @@ void adminMenu() {
           continue;
         }
 
+        pushHistory("Admin menghapus film: " +
+                    findByPosition(headFilm, position)->title);
         deleteFilmSpecific(&headFilm, filmCount, position);
         break;
       }
@@ -1054,6 +1092,7 @@ void adminMenu() {
       getline(cin, keyword);
 
       FilmNode *searchResult = searchFilmByTitle(headFilm, keyword);
+      pushHistory("Admin mencari film dengan keyword: " + keyword);
 
       if (searchResult == nullptr) {
         printMessage("Film Tidak Ditemukan");
@@ -1086,18 +1125,34 @@ void adminMenu() {
 
       if (sortChoice == 1) {
         shellSort(&headFilm, filmCount, SortType::TitleAsc);
+        pushHistory("Admin mengurutkan film berdasarkan judul (A-Z).");
         printMessage("Film telah diurutkan berdasarkan judul (A-Z).");
       } else if (sortChoice == 2) {
         shellSort(&headFilm, filmCount, SortType::TitleDesc);
+        pushHistory("Admin mengurutkan film berdasarkan judul (Z-A).");
         printMessage("Film telah diurutkan berdasarkan judul (Z-A).");
       } else if (sortChoice == 3) {
         shellSort(&headFilm, filmCount, SortType::AvgRatingAsc);
+        pushHistory(
+            "Admin mengurutkan film berdasarkan rata-rata rating (Asc).");
+        printMessage(
+            "Film telah diurutkan berdasarkan rata-rata rating (Asc).");
       } else if (sortChoice == 4) {
         shellSort(&headFilm, filmCount, SortType::AvgRatingDesc);
+        pushHistory(
+            "Admin mengurutkan film berdasarkan rata-rata rating (Desc).");
+        printMessage(
+            "Film telah diurutkan berdasarkan rata-rata rating (Desc).");
       } else {
         printMessage("Pilihan urutan tidak valid.");
       }
 
+    }
+    // #### LIHAT HISTORY ####
+    else if (choice == 6) {
+      clearScreen();
+      readHistory();
+      printMessage("");
     } else {
       printMessage("Pilihan menu tidak ada");
     }
@@ -1300,6 +1355,7 @@ void loginMenu() {
 
   currentUser = user;
   if (user->admin) {
+    pushHistory("Admin Login");
     adminMenu();
   } else {
     userMenu();
