@@ -1066,9 +1066,8 @@ void adminMenu() {
         continue;
       }
 
-      readFilm(headFilm);
-
       while (true) {
+        readFilm(headFilm);
         int position = inputPosition(filmCount);
         if (position == -1) {
           continue;
