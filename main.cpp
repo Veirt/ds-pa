@@ -52,7 +52,13 @@ int userCount = 0;
 User *currentUser = NULL;
 
 // UTILITY //
-void clearScreen() { cout << "\033[2J\033[1;1H"; }
+void clearScreen() {
+#ifdef _WIN32
+  system("cls");
+#else
+  system("clear");
+#endif
+}
 
 void printMessage(string message) {
   cout << "\n";
