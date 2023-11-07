@@ -1117,6 +1117,8 @@ void userMenu() {
     cout << "|[2] Rate Film       |" << endl;
     cout << "|[3] Hapus Rate Film |" << endl;
     cout << "|[4] Cari Film       |" << endl;
+    cout << "|[5] Top Rated Films |" << endl;
+    cout << "|[6] Low Rated Films |" << endl;
     cout << "======================" << endl;
 
     int choice = inputMenu();
@@ -1261,6 +1263,24 @@ void userMenu() {
           delete temp;
         }
       }
+    } 
+    // Menampilkan Top Rated Films
+    else if (choice == 5){
+      FilmNode *sortedCopy = copyLinkedList(headFilm);
+      shellSort(&sortedCopy, filmCount, SortType::AvgRatingDesc);
+      clearScreen();
+      readFilm(sortedCopy);
+      printMessage("");
+    
+    } 
+    // Menampilkan Low Rated Films
+    else if (choice == 6){
+      FilmNode *sortedCopy = copyLinkedList(headFilm);
+      shellSort(&sortedCopy, filmCount, SortType::AvgRatingAsc);
+      clearScreen();
+      readFilm(sortedCopy);
+      printMessage("");
+
     } else {
       printMessage("Pilihan menu tidak ada");
     }
