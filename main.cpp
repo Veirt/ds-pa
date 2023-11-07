@@ -831,14 +831,28 @@ FilmNode *findNode(FilmNode *headFilm, int idx) {
 
 enum SortType { TitleAsc, TitleDesc, AvgRatingAsc, AvgRatingDesc };
 
+string convertCase(string str) {
+  string result = "";
+
+  for (char c : str) {
+    if (isupper(c)) {
+      result += tolower(c);
+    } else {
+      result += toupper(c);
+    }
+  }
+
+  return result;
+}
+
 bool sortCondition(SortType sortType, FilmNode **headFilm, int j, int gap) {
   switch (sortType) {
   case TitleAsc:
-    return findNode(*headFilm, j - gap)->film.title >
-           findNode(*headFilm, j)->film.title;
+    return convertCase(findNode(*headFilm, j - gap)->film.title) >
+           convertCase(findNode(*headFilm, j)->film.title);
   case TitleDesc:
-    return findNode(*headFilm, j - gap)->film.title <
-           findNode(*headFilm, j)->film.title;
+    return convertCase(findNode(*headFilm, j - gap)->film.title) <
+           convertCase(findNode(*headFilm, j)->film.title);
   case AvgRatingAsc:
     return calculateAvgRating(*headFilm, headUser,
                               findNode(*headFilm, j - gap)->film.title) >
@@ -1196,45 +1210,13 @@ void userMenu() {
         continue;
       }
 
+      // by default, film diurutkan berdasarkan judul (A-Z)
       clearScreen();
-      cout << "Pilihan Penglihatan Film:" << endl;
-      cout << "[1] Lihat tanpa diurutkan" << endl;
-      cout << "[2] Lihat dengan diurutkan berdasarkan judul (A-Z)" << endl;
-      cout << "[3] Lihat dengan diurutkan berdasarkan judul (Z-A)" << endl;
-      cout << "[4] Urutkan berdasarkan rata-rata rating (Asc)" << endl;
-      cout << "[5] Urutkan berdasarkan rata-rata rating (Desc)" << endl;
-
-      int readChoice = inputMenu();
       FilmNode *sortedCopy = copyLinkedList(headFilm);
+      shellSort(&sortedCopy, filmCount, SortType::TitleAsc);
+      readFilm(sortedCopy);
 
-      if (readChoice == 1) {
-        clearScreen();
-        readFilm(headFilm);
-        printMessage("");
-      } else if (readChoice == 2) {
-        shellSort(&sortedCopy, filmCount, SortType::TitleAsc);
-        clearScreen();
-        readFilm(sortedCopy);
-        printMessage("");
-      } else if (readChoice == 3) {
-        shellSort(&sortedCopy, filmCount, SortType::TitleDesc);
-        clearScreen();
-        readFilm(sortedCopy);
-        printMessage("");
-      } else if (readChoice == 4) {
-        shellSort(&sortedCopy, filmCount, SortType::AvgRatingAsc);
-        clearScreen();
-        readFilm(sortedCopy);
-        printMessage("");
-      } else if (readChoice == 5) {
-        shellSort(&sortedCopy, filmCount, SortType::AvgRatingDesc);
-        clearScreen();
-        readFilm(sortedCopy);
-        printMessage("");
-      } else {
-        printMessage("Pilihan Lihat tidak valid.");
-      }
-
+      printMessage("");
       deleteLinkedList(sortedCopy);
     }
 
@@ -1331,7 +1313,6 @@ void userMenu() {
       clearScreen();
       readFilm(sortedCopy);
       printMessage("");
-
     }
     // Menampilkan Low Rated Films
     else if (choice == 6) {
@@ -1340,7 +1321,6 @@ void userMenu() {
       clearScreen();
       readFilm(sortedCopy);
       printMessage("");
-
     } else {
       printMessage("Pilihan menu tidak ada");
     }
