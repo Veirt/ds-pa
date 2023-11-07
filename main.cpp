@@ -740,7 +740,13 @@ float calculateAvgRating(FilmNode *headFilm, UserNode *headUser,
     temp = temp->next;
   }
 
-  return (float)totalRating / totalUser;
+  // mencegah result  jadi NAN (not a number)
+  float result = (float)totalRating / totalUser;
+  if (isnan(result)) {
+    return 0;
+  }
+
+  return result;
 }
 
 int getMyRating(User *user, string filmTitle) {
@@ -764,7 +770,7 @@ void readFilm(FilmNode *headFilm) {
     cout << "Sinopsis: " << temp->film.synopsis << endl;
 
     float rating = calculateAvgRating(headFilm, headUser, temp->film.title);
-    if (isnan(rating) || rating == 0) {
+    if (rating == 0) {
       cout << "Rating: -" << endl;
     } else {
       cout << "Rating: " << rating << endl;
@@ -1318,18 +1324,18 @@ void userMenu() {
           delete temp;
         }
       }
-    } 
+    }
     // Menampilkan Top Rated Films
-    else if (choice == 5){
+    else if (choice == 5) {
       FilmNode *sortedCopy = copyLinkedList(headFilm);
       shellSort(&sortedCopy, filmCount, SortType::AvgRatingDesc);
       clearScreen();
       readFilm(sortedCopy);
       printMessage("");
-    
-    } 
+
+    }
     // Menampilkan Low Rated Films
-    else if (choice == 6){
+    else if (choice == 6) {
       FilmNode *sortedCopy = copyLinkedList(headFilm);
       shellSort(&sortedCopy, filmCount, SortType::AvgRatingAsc);
       clearScreen();
