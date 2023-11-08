@@ -32,13 +32,15 @@ struct UserNode {
   UserNode *next;
 };
 
-struct HistoryStack {
-  string title;
-  HistoryStack *next;
+struct HistoryQueue {
+  string timestamp;
+  string action;
+  HistoryQueue *next;
 };
 
 // History
-HistoryStack *topHistory = NULL;
+HistoryQueue *frontHistory = NULL;
+HistoryQueue *rearHistory = NULL;
 
 // Operasinya akan ada addFirst, addLast, addSpecific, Update, deleteFirst,
 // deleteLast, deleteSpecific
@@ -109,26 +111,60 @@ int inputPosition(int filmCount) {
   }
 }
 
-void pushHistory(string title) {
-  HistoryStack *newNode = new HistoryStack;
-  newNode->title = title;
+int getHistoryCount() {
+  int count = 0;
+  HistoryQueue *temp = frontHistory;
+  while (temp != NULL) {
+    count++;
+    temp = temp->next;
+  }
+
+  return count;
+}
+
+void dequeueHistory() {
+  if (frontHistory == NULL) {
+    return;
+  }
+
+  HistoryQueue *temp = frontHistory;
+  frontHistory = frontHistory->next;
+  delete temp;
+}
+
+void enqueueHistory(string action) {
+  HistoryQueue *newNode = new HistoryQueue;
+
+  // ambil waktu sekarang
+  time_t t = time(NULL);
+  // convert ke localtime
+  tm *timePtr = localtime(&t);
+
+  // biar format nya string dan sesuai dengan format yang diminta
+  char buffer[80];
+  strftime(buffer, 80, "%d-%m-%Y %I:%M:%S", timePtr);
+
+  newNode->timestamp = buffer;
+  newNode->action = action;
   newNode->next = NULL;
 
-  if (topHistory == NULL) {
-    topHistory = newNode;
+  if (getHistoryCount() >= 10) {
+    dequeueHistory();
+  }
+
+  if (frontHistory == NULL) {
+    frontHistory = newNode;
+    rearHistory = newNode;
   } else {
-    HistoryStack *temp = topHistory;
-    while (temp->next != NULL) {
-      temp = temp->next;
-    }
-    temp->next = newNode;
+    rearHistory->next = newNode;
+    rearHistory = newNode;
   }
 }
 
-void readHistory() {
-  HistoryStack *temp = topHistory;
+void readHistory(HistoryQueue *frontHistory) {
+  HistoryQueue *temp = frontHistory;
   while (temp != NULL) {
-    cout << temp->title << endl;
+    cout << temp->timestamp << " - " << temp->action << endl;
     temp = temp->next;
   }
 }
@@ -767,6 +803,7 @@ void readFilm(FilmNode *headFilm) {
   FilmNode *temp = headFilm;
   int num = 1;
   while (temp != NULL) {
+    cout << endl;
     cout << "====================" << endl;
     cout << "Nomor: " << num << endl;
     cout << "Judul: " << temp->film.title << endl;
@@ -791,6 +828,7 @@ void readFilm(FilmNode *headFilm) {
         cout << "Rating saya: " << myRating << endl;
       }
     }
+    cout << "====================" << endl;
 
     temp = temp->next;
     num++;
@@ -1010,8 +1048,6 @@ bool checkIfEmpty(FilmNode *headFilm) {
   return false;
 }
 
-// TODO: Stack
-
 void rateFilm(User *user, FilmNode *headFilm, string filmTitle, int rating) {
   FilmNode *temp = headFilm;
   while (temp != NULL) {
@@ -1066,7 +1102,7 @@ void adminMenu() {
 
         Film film = createFilm();
         addFilmSpecific(&headFilm, film, filmCount, position);
-        pushHistory("Menambahkan film " + film.title);
+        enqueueHistory("Admin Menambahkan film: " + film.title);
         break;
       }
 
@@ -1077,7 +1113,7 @@ void adminMenu() {
     else if (choice == 2) {
       clearScreen();
       readFilm(headFilm);
-      pushHistory("Admin melihat daftar film.");
+      enqueueHistory("Admin melihat daftar film");
       printMessage("");
     }
     // #### HAPUS FILM ####
@@ -1096,8 +1132,8 @@ void adminMenu() {
           continue;
         }
 
-        pushHistory("Admin menghapus film: " +
-                    findByPosition(headFilm, position)->title);
+        enqueueHistory("Admin menghapus film: " +
+                       findByPosition(headFilm, position)->title);
         deleteFilmSpecific(&headFilm, filmCount, position);
         break;
       }
@@ -1117,7 +1153,7 @@ void adminMenu() {
       getline(cin, keyword);
 
       FilmNode *searchResult = searchFilmByTitle(headFilm, keyword);
-      pushHistory("Admin mencari film dengan keyword: " + keyword);
+      enqueueHistory("Admin mencari film dengan keyword: " + keyword);
 
       if (searchResult == nullptr) {
         printMessage("Film Tidak Ditemukan");
@@ -1150,21 +1186,21 @@ void adminMenu() {
 
       if (sortChoice == 1) {
         shellSort(&headFilm, filmCount, SortType::TitleAsc);
-        pushHistory("Admin mengurutkan film berdasarkan judul (A-Z).");
+        enqueueHistory("Admin mengurutkan film berdasarkan judul (A-Z).");
         printMessage("Film telah diurutkan berdasarkan judul (A-Z).");
       } else if (sortChoice == 2) {
         shellSort(&headFilm, filmCount, SortType::TitleDesc);
-        pushHistory("Admin mengurutkan film berdasarkan judul (Z-A).");
+        enqueueHistory("Admin mengurutkan film berdasarkan judul (Z-A).");
         printMessage("Film telah diurutkan berdasarkan judul (Z-A).");
       } else if (sortChoice == 3) {
         shellSort(&headFilm, filmCount, SortType::AvgRatingAsc);
-        pushHistory(
+        enqueueHistory(
             "Admin mengurutkan film berdasarkan rata-rata rating (Asc).");
         printMessage(
             "Film telah diurutkan berdasarkan rata-rata rating (Asc).");
       } else if (sortChoice == 4) {
         shellSort(&headFilm, filmCount, SortType::AvgRatingDesc);
-        pushHistory(
+        enqueueHistory(
             "Admin mengurutkan film berdasarkan rata-rata rating (Desc).");
         printMessage(
             "Film telah diurutkan berdasarkan rata-rata rating (Desc).");
@@ -1176,7 +1212,7 @@ void adminMenu() {
     // #### LIHAT HISTORY ####
     else if (choice == 6) {
       clearScreen();
-      readHistory();
+      readHistory(frontHistory);
       printMessage("");
     } else {
       printMessage("Pilihan menu tidak ada");
@@ -1218,12 +1254,9 @@ void userMenu() {
 
       // by default, film diurutkan berdasarkan judul (A-Z)
       clearScreen();
-      FilmNode *sortedCopy = copyLinkedList(headFilm);
-      shellSort(&sortedCopy, filmCount, SortType::TitleAsc);
-      readFilm(sortedCopy);
+      readFilm(headFilm);
 
       printMessage("");
-      deleteLinkedList(sortedCopy);
     }
 
     // #### RATE FILM ####
@@ -1366,7 +1399,7 @@ void loginMenu() {
 
   currentUser = user;
   if (user->admin) {
-    pushHistory("Admin Login");
+    enqueueHistory("Admin " + currentUser->username + " Login");
     adminMenu();
   } else {
     userMenu();
