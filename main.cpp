@@ -611,6 +611,11 @@ void deleteFilmSpecific(FilmNode **headFilm, int &count, int position) {
   count--;
 }
 
+/*
+  Function untuk mengupdate data film.
+  Digunakan saat admin melakukan update data film.
+
+*/
 void updateFilm(FilmNode **headFilm, Film film, int position) {
   if (*headFilm == NULL) {
     return;
@@ -645,6 +650,9 @@ void saveToUserTsv(UserNode *headNode) {
   file.close();
 }
 
+/*
+  Function untuk menyimpan data rating ke file dengan format tsv
+*/
 void saveUserRatingFile(UserNode *headNode) {
   ofstream file;
   file.open("rating.tsv");
@@ -707,6 +715,9 @@ void loadUserFile(UserNode **headNode) {
   file.close();
 }
 
+/*
+  Function untuk mengambil data rating dari file dengan format tsv
+*/
 void loadRatingFile(UserNode **headNode) {
   ifstream file;
   file.open("rating.tsv");
@@ -719,12 +730,18 @@ void loadRatingFile(UserNode **headNode) {
     getline(ss, filmTitle, '\t');
     getline(ss, rating, '\t');
 
+    // kalo usernya ga ada, skip.
     User *user = findByUsername(*headNode, username);
     if (user == NULL) {
       continue;
     }
 
+    // kalo filmnya ga ada, skip juga.
     Film *film = findByTitle(headFilm, filmTitle);
+    if (film == NULL) {
+      continue;
+    }
+
     int ratingInt = stoi(rating);
     user->filmRatings[film->title] = ratingInt;
   }
@@ -732,6 +749,9 @@ void loadRatingFile(UserNode **headNode) {
   file.close();
 }
 
+/*
+  Function untuk mengambil data film dari file dengan format tsv
+*/
 void loadFilmFile(FilmNode **headNode) {
   ifstream file;
   file.open("film.tsv");
@@ -754,6 +774,10 @@ void loadFilmFile(FilmNode **headNode) {
   file.close();
 }
 
+/*
+  Function untuk menghitung rata-rata rating dari film, berdasarkan title yang
+  diberikan.
+*/
 float calculateAvgRating(FilmNode *headFilm, UserNode *headUser,
                          string filmTitle) {
   FilmNode *temp = headFilm;
@@ -782,7 +806,7 @@ float calculateAvgRating(FilmNode *headFilm, UserNode *headUser,
     temp = temp->next;
   }
 
-  // mencegah result  jadi NAN (not a number)
+  // mencegah result jadi NAN (not a number)
   float result = (float)totalRating / totalUser;
   if (isnan(result)) {
     return 0;
@@ -791,6 +815,9 @@ float calculateAvgRating(FilmNode *headFilm, UserNode *headUser,
   return result;
 }
 
+/*
+  Function untuk mengambil rating yang diberikan user terhadap film.
+*/
 int getMyRating(User *user, string filmTitle) {
   if (user->filmRatings.find(filmTitle) == user->filmRatings.end()) {
     return 0;
@@ -799,6 +826,9 @@ int getMyRating(User *user, string filmTitle) {
   return user->filmRatings[filmTitle];
 }
 
+/*
+  Function untuk menampilkan seluruh data film.
+*/
 void readFilm(FilmNode *headFilm) {
   FilmNode *temp = headFilm;
   int num = 1;
@@ -835,6 +865,9 @@ void readFilm(FilmNode *headFilm) {
   }
 }
 
+/*
+  Function untuk menukar posisi antara dua node film.
+*/
 void swapNodes(FilmNode **headFilm, FilmNode *a, FilmNode *b) {
   if (a == b)
     return;
@@ -863,6 +896,9 @@ void swapNodes(FilmNode **headFilm, FilmNode *a, FilmNode *b) {
   b->next = temp;
 }
 
+/*
+  Function untuk mencari node film berdasarkan index/posisi.
+*/
 FilmNode *findNode(FilmNode *headFilm, int idx) {
   FilmNode *temp = headFilm;
 
@@ -873,8 +909,18 @@ FilmNode *findNode(FilmNode *headFilm, int idx) {
   return temp;
 }
 
+/*
+  Enum untuk menentukan tipe sorting.
+*/
 enum SortType { TitleAsc, TitleDesc, AvgRatingAsc, AvgRatingDesc };
 
+/*
+  Utility function sehingga saat sorting berdasarkan title, huruf kecil tampil
+  terlebih dahulu
+
+  Normalnya, huruf besar akan tampil terlebih dahulu, karena ASCII code huruf
+  besar lebih kecil daripada huruf kecil.
+*/
 string convertCase(string str) {
   string result = "";
 
@@ -889,6 +935,9 @@ string convertCase(string str) {
   return result;
 }
 
+/*
+  Function untuk mengecek apakah kondisi sorting.
+*/
 bool sortCondition(SortType sortType, FilmNode **headFilm, int j, int gap) {
   switch (sortType) {
   case TitleAsc:
@@ -913,6 +962,9 @@ bool sortCondition(SortType sortType, FilmNode **headFilm, int j, int gap) {
   return false;
 }
 
+/*
+  Function untuk melakukan sorting menggunakan shell sort.
+*/
 void shellSort(FilmNode **headFilm, int filmCount, SortType sortType) {
   for (int gap = filmCount / 2; gap > 0; gap /= 2) {
     for (int i = gap; i < filmCount; i++) {
@@ -927,6 +979,11 @@ void shellSort(FilmNode **headFilm, int filmCount, SortType sortType) {
   }
 }
 
+/*
+  Function untuk mengcopy linked list film.
+  Diperlukan karena saat user melakukan sorting, kita tidak ingin mengubah
+  linked list aslinya.
+*/
 FilmNode *copyLinkedList(FilmNode *headFilm) {
   FilmNode *newHead = nullptr;
   FilmNode *tail = nullptr;
@@ -951,6 +1008,9 @@ FilmNode *copyLinkedList(FilmNode *headFilm) {
   return newHead;
 }
 
+/*
+  Function untuk menghapus seluruh node pada linked list film.
+*/
 void deleteLinkedList(FilmNode *headFilm) {
   while (headFilm != nullptr) {
     FilmNode *temp = headFilm;
@@ -1039,6 +1099,9 @@ FilmNode *searchFilmByTitle(FilmNode *headFilm, const string &keyword) {
   return resultHead;
 }
 
+/*
+  Function untuk mengecek apakah linked list film kosong atau tidak.
+*/
 bool checkIfEmpty(FilmNode *headFilm) {
   if (headFilm == NULL) {
     printMessage("Belum ada data film.");
@@ -1048,6 +1111,12 @@ bool checkIfEmpty(FilmNode *headFilm) {
   return false;
 }
 
+/*
+  Function untuk user melakukan rating terhadap film.
+  Rating film akan disimpan di dengan hash map/dictionary yang disimpan di dalam
+  struct User. Key nya adalah judul film, dan value nya adalah rating yang
+  diberikan.
+*/
 void rateFilm(User *user, FilmNode *headFilm, string filmTitle, int rating) {
   FilmNode *temp = headFilm;
   while (temp != NULL) {
@@ -1220,6 +1289,10 @@ void adminMenu() {
   }
 }
 
+/*
+  Menu User. Pada menu ini user dapat melakukan operasi seperti melihat film,
+  memberikan rating, menghapus rating, dan mencari film.
+*/
 void userMenu() {
   while (true) {
     clearScreen();
@@ -1377,6 +1450,11 @@ void userMenu() {
   }
 }
 
+/*
+  Function login untuk mencari user berdasarkan username dan password.
+  Jika ditemukan, maka akan mengembalikan pointer ke struct user tersebut.
+  Jika tidak ditemukan, maka akan mengembalikan NULL.
+*/
 User *login(UserNode *headUser, string username, string password) {
   UserNode *temp = headUser;
   // traversal dengan mencocokkan username dan password
