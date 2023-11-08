@@ -1252,10 +1252,10 @@ void userMenu() {
         continue;
       }
 
-      // by default, film diurutkan berdasarkan judul (A-Z)
       clearScreen();
       readFilm(headFilm);
 
+      enqueueHistory("User " + currentUser->username + " melihat daftar film");
       printMessage("");
     }
 
@@ -1282,6 +1282,9 @@ void userMenu() {
         int rating = inputRating(*film);
 
         rateFilm(currentUser, headFilm, film->title, rating);
+        enqueueHistory("User " + currentUser->username +
+                       " memberikan rating ke film " + film->title +
+                       " sebesar " + to_string(rating));
 
         break;
       }
@@ -1312,6 +1315,8 @@ void userMenu() {
         }
 
         rateFilm(currentUser, headFilm, film->title, 0);
+        enqueueHistory("User " + currentUser->username +
+                       " menghapus rating film " + film->title);
         break;
       }
 
@@ -1329,6 +1334,8 @@ void userMenu() {
       cout << "Masukkan Judul Film Yang Ingin Di Cari : ";
       getline(cin, keyword);
 
+      enqueueHistory("User " + currentUser->username +
+                     " mencari film dengan keyword: " + keyword);
       FilmNode *searchResult = searchFilmByTitle(headFilm, keyword);
 
       if (searchResult == nullptr) {
@@ -1351,6 +1358,8 @@ void userMenu() {
       shellSort(&sortedCopy, filmCount, SortType::AvgRatingDesc);
       clearScreen();
       readFilm(sortedCopy);
+      enqueueHistory("User " + currentUser->username +
+                     " melihat daftar film berdasarkan rating tertinggi");
       printMessage("");
     }
     // Menampilkan Low Rated Films
@@ -1359,6 +1368,8 @@ void userMenu() {
       shellSort(&sortedCopy, filmCount, SortType::AvgRatingAsc);
       clearScreen();
       readFilm(sortedCopy);
+      enqueueHistory("User " + currentUser->username +
+                     " melihat daftar film berdasarkan rating terendah");
       printMessage("");
     } else {
       printMessage("Pilihan menu tidak ada");
@@ -1402,6 +1413,7 @@ void loginMenu() {
     enqueueHistory("Admin " + currentUser->username + " Login");
     adminMenu();
   } else {
+    enqueueHistory("User " + currentUser->username + " Login");
     userMenu();
   }
 }
