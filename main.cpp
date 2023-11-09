@@ -8,6 +8,7 @@
 
 using namespace std;
 
+//Struct user 
 struct User {
   string username;
   string password;
@@ -15,6 +16,7 @@ struct User {
   unordered_map<string, int> filmRatings;
 };
 
+//Struct Film
 struct Film {
   string title;
   string director;
@@ -23,6 +25,7 @@ struct Film {
   string synopsis;
 };
 
+//Struct node film
 struct FilmNode {
   Film film;
   FilmNode *next;
@@ -33,6 +36,7 @@ struct UserNode {
   UserNode *next;
 };
 
+//Struct queue untuk history
 struct HistoryQueue {
   string timestamp;
   string action;
@@ -58,6 +62,7 @@ int userCount = 0;
 // tersebut
 User *currentUser = NULL;
 
+//Function untuk mengaktifkan system "cls" Untuk membersihkan terminal
 void clearScreen() {
 #ifdef _WIN32
   system("cls");
