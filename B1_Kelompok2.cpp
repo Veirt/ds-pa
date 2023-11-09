@@ -1,10 +1,10 @@
 #include <cmath>
+#include <ctime>
 #include <fstream>
 #include <iostream>
 #include <limits>
 #include <sstream>
 #include <unordered_map>
-#include <ctime>
 
 using namespace std;
 
@@ -740,7 +740,7 @@ void updateFilm(FilmNode **headFilm, Film film, int position) {
 */
 void saveToUserTsv(UserNode *headNode) {
   ofstream file;
-  file.open("user.tsv");
+  file.open("B1_Kelompok2_User.tsv");
 
   UserNode *temp = headNode;
   while (temp != NULL) {
@@ -757,7 +757,7 @@ void saveToUserTsv(UserNode *headNode) {
 */
 void saveUserRatingFile(UserNode *headNode) {
   ofstream file;
-  file.open("rating.tsv");
+  file.open("B1_Kelompok2_Rating.tsv");
 
   UserNode *temp = headNode;
   while (temp != NULL) {
@@ -781,7 +781,7 @@ void saveUserRatingFile(UserNode *headNode) {
 */
 void saveFilmFile(FilmNode &headNode) {
   ofstream file;
-  file.open("film.tsv");
+  file.open("B1_Kelompok2_Film.tsv");
 
   FilmNode *temp = &headNode;
   while (temp != NULL) {
@@ -799,7 +799,7 @@ void saveFilmFile(FilmNode &headNode) {
 */
 void loadUserFile(UserNode **headNode) {
   ifstream file;
-  file.open("user.tsv");
+  file.open("B1_Kelompok2_User.tsv");
 
   string line;
   while (getline(file, line)) {
@@ -827,7 +827,7 @@ void loadUserFile(UserNode **headNode) {
 */
 void loadRatingFile(UserNode **headNode) {
   ifstream file;
-  file.open("rating.tsv");
+  file.open("B1_Kelompok2_Rating.tsv");
 
   string line;
   while (getline(file, line)) {
@@ -861,7 +861,7 @@ void loadRatingFile(UserNode **headNode) {
 */
 void loadFilmFile(FilmNode **headNode) {
   ifstream file;
-  file.open("film.tsv");
+  file.open("B1_Kelompok2_Film.tsv");
 
   string title, director, genre, year, synopsis;
   string line;
