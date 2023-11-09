@@ -51,9 +51,12 @@ int filmCount = 0;
 UserNode *headUser = NULL;
 int userCount = 0;
 
+// User yang sedang login
+// Kalo NULL, berarti tidak ada user yang sedang login
+// Kalo ada user yang sedang login, currentUser akan berisi pointer ke user
+// tersebut
 User *currentUser = NULL;
 
-// UTILITY //
 void clearScreen() {
 #ifdef _WIN32
   system("cls");
@@ -62,6 +65,12 @@ void clearScreen() {
 #endif
 }
 
+/*
+   pengganti system("pause") di windows
+    karena system("pause") tidak berfungsi di linux.
+
+    Untuk tambahan, ada clearScreen() yang bisa digunakan untuk clear screen
+*/
 void printMessage(string message) {
   cout << "\n";
   cout << message << endl;
@@ -111,6 +120,9 @@ int inputPosition(int filmCount) {
   }
 }
 
+/*
+  Function untuk mengambil jumlah history yang ada di queue.
+*/
 int getHistoryCount() {
   int count = 0;
   HistoryQueue *temp = frontHistory;
@@ -122,6 +134,9 @@ int getHistoryCount() {
   return count;
 }
 
+/*
+  Function untuk menghapus history yang ada di queue.
+*/
 void dequeueHistory() {
   if (frontHistory == NULL) {
     return;
@@ -132,6 +147,9 @@ void dequeueHistory() {
   delete temp;
 }
 
+/*
+  Function untuk menambahkan history baru ke queue.
+*/
 void enqueueHistory(string action) {
   HistoryQueue *newNode = new HistoryQueue;
 
@@ -148,6 +166,8 @@ void enqueueHistory(string action) {
   newNode->action = action;
   newNode->next = NULL;
 
+  // kalo udah 10, hapus yang paling awal
+  // biar ga terlalu banyak
   if (getHistoryCount() >= 10) {
     dequeueHistory();
   }
@@ -161,6 +181,10 @@ void enqueueHistory(string action) {
   }
 }
 
+/*
+  Function untuk menampilkan seluruh history yang ada.
+  Digunakan ketika admin melihat history.
+*/
 void readHistory(HistoryQueue *frontHistory) {
   HistoryQueue *temp = frontHistory;
   while (temp != NULL) {
@@ -197,6 +221,14 @@ int inputRating(Film film) {
   }
 }
 
+/*
+  Function untuk mengambil input genre dari user, dan untuk melakukan validasi
+
+  inputGenre() akan memberikan prompt kepada user untuk memilih genre film.
+  User bisa memilih lebih dari satu genre, dan tidak bisa memilih genre yang
+  sama
+
+*/
 string inputGenre() {
   string genre = "";
 
@@ -276,6 +308,12 @@ string inputGenre() {
   return genre;
 }
 
+/*
+  Function untuk mencari film berdasarkan posisi.
+  Jika tidak ada, maka akan mengembalikan NULL.
+  Jika ada, maka akan mengembalikan pointer ke film tersebut.
+
+*/
 Film *findByPosition(FilmNode *headFilm, int position) {
   FilmNode *temp = headFilm;
   for (int i = 0; i < position - 1; i++) {
@@ -289,6 +327,11 @@ Film *findByPosition(FilmNode *headFilm, int position) {
   return &temp->film;
 }
 
+/*
+  Function untuk mencari film berdasarkan title.
+  Jika tidak ada, maka akan mengembalikan NULL.
+  Jika ada, maka akan mengembalikan pointer ke film tersebut.
+*/
 Film *findByTitle(FilmNode *headFilm, string title) {
   FilmNode *temp = headFilm;
   while (temp != NULL) {
@@ -340,14 +383,22 @@ User *registerUser(UserNode **headUser, User user) {
   return &newNode->user;
 }
 
-void readUser(UserNode *headUser) {
-  UserNode *temp = headUser;
-  while (temp != NULL) {
-    cout << temp->user.username << endl;
-    temp = temp->next;
-  }
-}
+/*
+  Function yang digunakan untuk membuat user baru dengan parameter yang
+  diberikan/input sendiri.
 
+  Contoh:
+  createUser() -> user akan diminta input semua data user, karena tidak ada
+  argument yang diberi
+
+  createUser("Username") -> user hanya diminta input data yang belum ada,
+  karena sudah ada username, maka tidak perlu input username, dan hanya perlu
+  input password
+
+  createUser("Username", "Password") -> user tidak perlu input semua data user
+  karena sudah ada data yang diberi di argument.
+
+*/
 User createUser(string username = "", string password = "", bool admin = false,
                 unordered_map<string, int> filmRatings = {}) {
   User user = *new User;
@@ -368,6 +419,11 @@ User createUser(string username = "", string password = "", bool admin = false,
   return user;
 }
 
+/*
+  Function untuk mengecek apakah film title sudah digunakan atau belum.
+  Digunakan saat admin menambahkan film baru.
+
+*/
 bool validateFilmTitle(FilmNode *headFilm, string title) {
   FilmNode *temp = headFilm;
   while (temp != NULL) {
@@ -380,6 +436,22 @@ bool validateFilmTitle(FilmNode *headFilm, string title) {
   return true;
 }
 
+/*
+  Function untuk membuat film baru.
+  Maksudnya parameter defaultnya adalah string kosong, sehingga user bisa input
+  Contoh:
+  createFilm() -> admin akan diminta input semua data film, karena tidak ada
+  argument yang diberi
+
+  createFilm("Judul Film") -> admin hanya diminta input data
+  yang belum ada, karena sudah ada judul film
+
+  createFilm("Judul Film", "Director Film", "Genre1, Genre2", 2023, "Sinopsis")
+  -> admin tidak perlu input semua data film, karena sudah ada data yang diberi
+  di argument
+  ->
+
+*/
 Film createFilm(string title = "", string director = "", string genre = "",
                 int year = 0, string synopsis = "") {
   Film film;
@@ -476,6 +548,9 @@ Film createFilm(string title = "", string director = "", string genre = "",
   return film;
 }
 
+/*
+  Function untuk menambahkan film pada posisi pertama.
+*/
 void addFilmAtFirst(FilmNode **headFilm, Film film, int &count) {
   FilmNode *newNode = new FilmNode;
   newNode->film = film;
@@ -484,6 +559,9 @@ void addFilmAtFirst(FilmNode **headFilm, Film film, int &count) {
   count++;
 }
 
+/*
+  Function untuk menambahkan film pada posisi terakhir.
+*/
 void addFilmAtLast(FilmNode **headFilm, Film film, int &count) {
   FilmNode *newNode = new FilmNode;
   newNode->film = film;
@@ -503,6 +581,9 @@ void addFilmAtLast(FilmNode **headFilm, Film film, int &count) {
   count++;
 }
 
+/*
+  Function untuk menambahkan film pada posisi tertentu.
+*/
 void addFilmSpecific(FilmNode **headFilm, Film film, int &count, int position) {
   FilmNode *newNode = new FilmNode;
   newNode->film = film;
@@ -535,17 +616,29 @@ void addFilmSpecific(FilmNode **headFilm, Film film, int &count, int position) {
   count++;
 }
 
+/*
+  Function untuk menghapus rating film pada seluruh user.
+  Karena rating film disimpan di hash map/dictionary yang disimpan di dalam
+  struct User, maka kita perlu menghapus rating film pada seluruh user.
+*/
 void deleteFilmRatings(UserNode **headUser, string filmTitle) {
+  // transversal user
   UserNode *temp = *headUser;
   while (temp != NULL) {
+    // cari key filmTitle di hash map/dictionary
     if (temp->user.filmRatings.find(filmTitle) !=
         temp->user.filmRatings.end()) {
+      // hapus key filmTitle
       temp->user.filmRatings.erase(filmTitle);
     }
     temp = temp->next;
   }
 }
 
+/*
+  Function untuk menghapus film pada posisi pertama.
+  Nanti akan dipanggil saat admin menghapus film.
+*/
 void deleteFilmAtFirst(FilmNode **headFilm, int &count) {
   if (*headFilm == NULL) {
     return;
@@ -558,6 +651,10 @@ void deleteFilmAtFirst(FilmNode **headFilm, int &count) {
   count--;
 }
 
+/*
+  Function untuk menghapus film pada posisi terakhir.
+  Nanti akan dipanggil saat user menghapus film.
+*/
 void deleteFilmAtLast(FilmNode **headFilm, int &count) {
   if (*headFilm == NULL) {
     return;
@@ -614,7 +711,6 @@ void deleteFilmSpecific(FilmNode **headFilm, int &count, int position) {
 /*
   Function untuk mengupdate data film.
   Digunakan saat admin melakukan update data film.
-
 */
 void updateFilm(FilmNode **headFilm, Film film, int position) {
   if (*headFilm == NULL) {
@@ -703,10 +799,15 @@ void loadUserFile(UserNode **headNode) {
   while (getline(file, line)) {
     stringstream ss(line);
     string username, password, admin;
+    // ambil username sampai tab
     getline(ss, username, '\t');
+    // ambil password sampai tab
     getline(ss, password, '\t');
+    // ambil admin sampai tab (0 atau 1)
+    // 0 artinya bukan admin, 1 artinya admin
     getline(ss, admin, '\t');
 
+    // admin == "1" akan menghasilkan true jika admin == 1
     User user = createUser(username, password, admin == "1");
 
     registerUser(headNode, user);
@@ -783,10 +884,14 @@ float calculateAvgRating(FilmNode *headFilm, UserNode *headUser,
   FilmNode *temp = headFilm;
   int totalRating = 0;
   int totalUser = 0;
+  // transversal film
   while (temp != NULL) {
+    // jika filmnya ditemukan (sesuai dengan parameter yang diberikan)
     if (temp->film.title == filmTitle) {
+      // transversal user
       UserNode *tempUser = headUser;
       while (tempUser != NULL) {
+        // cari user yang sudah pernah rate film ini
         if (tempUser->user.filmRatings.find(filmTitle) !=
             tempUser->user.filmRatings.end()) {
 
@@ -819,6 +924,8 @@ float calculateAvgRating(FilmNode *headFilm, UserNode *headUser,
   Function untuk mengambil rating yang diberikan user terhadap film.
 */
 int getMyRating(User *user, string filmTitle) {
+
+  // kalau filmnya belum pernah di rate, return 0
   if (user->filmRatings.find(filmTitle) == user->filmRatings.end()) {
     return 0;
   }
@@ -936,16 +1043,18 @@ string convertCase(string str) {
 }
 
 /*
-  Function untuk mengecek apakah kondisi sorting.
+  Function untuk mengecek kondisi sorting berdasarkan tipe sorting yang dipilih
 */
 bool sortCondition(SortType sortType, FilmNode **headFilm, int j, int gap) {
   switch (sortType) {
+    // title di convertCase (kecil jadi besar, besar jadi kecil)
   case TitleAsc:
     return convertCase(findNode(*headFilm, j - gap)->film.title) >
            convertCase(findNode(*headFilm, j)->film.title);
   case TitleDesc:
     return convertCase(findNode(*headFilm, j - gap)->film.title) <
            convertCase(findNode(*headFilm, j)->film.title);
+
   case AvgRatingAsc:
     return calculateAvgRating(*headFilm, headUser,
                               findNode(*headFilm, j - gap)->film.title) >
