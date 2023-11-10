@@ -8,7 +8,7 @@
 
 using namespace std;
 
-//Struct user 
+// Struct user
 struct User {
   string username;
   string password;
@@ -16,7 +16,7 @@ struct User {
   unordered_map<string, int> filmRatings;
 };
 
-//Struct Film
+// Struct Film
 struct Film {
   string title;
   string director;
@@ -25,7 +25,7 @@ struct Film {
   string synopsis;
 };
 
-//Struct node film
+// Struct node film
 struct FilmNode {
   Film film;
   FilmNode *next;
@@ -36,7 +36,7 @@ struct UserNode {
   UserNode *next;
 };
 
-//Struct queue untuk history
+// Struct queue untuk history
 struct HistoryQueue {
   string timestamp;
   string action;
@@ -62,7 +62,7 @@ int userCount = 0;
 // tersebut
 User *currentUser = NULL;
 
-//Function untuk mengaktifkan system "cls" Untuk membersihkan terminal
+// Function untuk mengaktifkan system "cls" Untuk membersihkan terminal
 void clearScreen() {
 #ifdef _WIN32
   system("cls");
@@ -740,7 +740,7 @@ void updateFilm(FilmNode **headFilm, Film film, int position) {
 */
 void saveToUserTsv(UserNode *headNode) {
   ofstream file;
-  file.open("B1_Kelompok2_User.tsv");
+  file.open("B1_Kelompok2/B1_Kelompok2_User.tsv");
 
   UserNode *temp = headNode;
   while (temp != NULL) {
@@ -757,7 +757,7 @@ void saveToUserTsv(UserNode *headNode) {
 */
 void saveUserRatingFile(UserNode *headNode) {
   ofstream file;
-  file.open("B1_Kelompok2_Rating.tsv");
+  file.open("B1_Kelompok2/B1_Kelompok2_Rating.tsv");
 
   UserNode *temp = headNode;
   while (temp != NULL) {
@@ -781,7 +781,7 @@ void saveUserRatingFile(UserNode *headNode) {
 */
 void saveFilmFile(FilmNode &headNode) {
   ofstream file;
-  file.open("B1_Kelompok2_Film.tsv");
+  file.open("B1_Kelompok2/B1_Kelompok2_Film.tsv");
 
   FilmNode *temp = &headNode;
   while (temp != NULL) {
@@ -799,7 +799,7 @@ void saveFilmFile(FilmNode &headNode) {
 */
 void loadUserFile(UserNode **headNode) {
   ifstream file;
-  file.open("B1_Kelompok2_User.tsv");
+  file.open("B1_Kelompok2/B1_Kelompok2_User.tsv");
 
   string line;
   while (getline(file, line)) {
@@ -827,7 +827,7 @@ void loadUserFile(UserNode **headNode) {
 */
 void loadRatingFile(UserNode **headNode) {
   ifstream file;
-  file.open("B1_Kelompok2_Rating.tsv");
+  file.open("B1_Kelompok2/B1_Kelompok2_Rating.tsv");
 
   string line;
   while (getline(file, line)) {
@@ -861,7 +861,7 @@ void loadRatingFile(UserNode **headNode) {
 */
 void loadFilmFile(FilmNode **headNode) {
   ifstream file;
-  file.open("B1_Kelompok2_Film.tsv");
+  file.open("B1_Kelompok2/B1_Kelompok2_Film.tsv");
 
   string title, director, genre, year, synopsis;
   string line;
